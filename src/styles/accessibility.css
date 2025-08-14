@@ -1,0 +1,443 @@
+/* Accessibility Improvements for Better Color Contrast and Visual Accessibility */
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  /* High contrast button styles */
+  .btn-primary {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border: 2px solid #ffffff !important;
+  }
+  
+  .btn-secondary {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 2px solid #000000 !important;
+  }
+  
+  .btn-outline {
+    background-color: transparent !important;
+    color: #000000 !important;
+    border: 2px solid #000000 !important;
+  }
+  
+  .btn-danger {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 2px solid #000000 !important;
+  }
+  
+  /* High contrast text */
+  .text-primary {
+    color: #000000 !important;
+  }
+  
+  .text-secondary {
+    color: #4a4a4a !important;
+  }
+  
+  /* High contrast backgrounds */
+  .bg-white {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+  
+  .bg-gray-50 {
+    background-color: #f8f8f8 !important;
+    color: #000000 !important;
+  }
+  
+  /* High contrast borders */
+  .border-gray-200,
+  .border-gray-300 {
+    border-color: #000000 !important;
+  }
+  
+  /* High contrast focus states */
+  .focus\:ring-blue-500:focus {
+    box-shadow: 0 0 0 2px #000000 !important;
+  }
+  
+  /* High contrast form elements */
+  input, select, textarea {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 2px solid #000000 !important;
+  }
+  
+  input:focus, select:focus, textarea:focus {
+    box-shadow: 0 0 0 2px #000000 !important;
+    outline: 2px solid #000000 !important;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .animate-spin {
+    animation: none !important;
+  }
+  
+  .transition-all,
+  .transition-colors,
+  .transition-opacity,
+  .transition-transform {
+    transition: none !important;
+  }
+}
+
+/* Enhanced Focus Indicators */
+.focus-visible:focus-visible {
+  outline: 2px solid #2563eb !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 2px #2563eb !important;
+}
+
+/* Better link contrast - NO underlines */
+a {
+  color: #1d4ed8 !important;
+  text-decoration: none !important;
+}
+
+a:hover {
+  color: #1e40af !important;
+  text-decoration: none !important;
+}
+
+a:focus {
+  outline: 2px solid #2563eb !important;
+  outline-offset: 2px !important;
+  text-decoration: none !important;
+}
+
+a:active {
+  text-decoration: none !important;
+}
+
+a:visited {
+  text-decoration: none !important;
+}
+
+/* Button elements should not have underlines */
+button, 
+button *,
+button a,
+[role="button"],
+[role="button"] *,
+[role="button"] a,
+.btn,
+.btn *,
+.btn a,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  text-decoration: none !important;
+}
+
+button:hover,
+button:hover *,
+button:hover a,
+[role="button"]:hover,
+[role="button"]:hover *,
+[role="button"]:hover a,
+.btn:hover,
+.btn:hover *,
+.btn:hover a,
+input[type="button"]:hover,
+input[type="submit"]:hover,
+input[type="reset"]:hover {
+  text-decoration: none !important;
+}
+
+button:focus,
+button:focus *,
+button:focus a,
+[role="button"]:focus,
+[role="button"]:focus *,
+[role="button"]:focus a,
+.btn:focus,
+.btn:focus *,
+.btn:focus a,
+input[type="button"]:focus,
+input[type="submit"]:focus,
+input[type="reset"]:focus {
+  text-decoration: none !important;
+}
+
+/* Improved error state colors */
+.text-red-600 {
+  color: #dc2626 !important;
+}
+
+.bg-red-50 {
+  background-color: #fef2f2 !important;
+}
+
+.border-red-300 {
+  border-color: #fca5a5 !important;
+}
+
+/* Better success state colors */
+.text-green-600 {
+  color: #16a34a !important;
+}
+
+.bg-green-50 {
+  background-color: #f0fdf4 !important;
+}
+
+.border-green-300 {
+  border-color: #86efac !important;
+}
+
+/* Improved warning state colors */
+.text-yellow-600 {
+  color: #ca8a04 !important;
+}
+
+.bg-yellow-50 {
+  background-color: #fefce8 !important;
+}
+
+.border-yellow-300 {
+  border-color: #fde047 !important;
+}
+
+/* Dark mode accessibility improvements */
+@media (prefers-color-scheme: dark) {
+  /* Ensure sufficient contrast in dark mode */
+  .dark\:text-gray-200 {
+    color: #f3f4f6 !important;
+  }
+  
+  .dark\:text-gray-300 {
+    color: #d1d5db !important;
+  }
+  
+  .dark\:bg-gray-800 {
+    background-color: #1f2937 !important;
+  }
+  
+  .dark\:bg-gray-700 {
+    background-color: #374151 !important;
+  }
+  
+  .dark\:border-gray-600 {
+    border-color: #4b5563 !important;
+  }
+  
+  /* Dark mode focus indicators */
+  .dark .focus-visible:focus-visible {
+    outline: 2px solid #60a5fa !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 2px #60a5fa !important;
+  }
+  
+  /* Dark mode link colors */
+  .dark a {
+    color: #60a5fa !important;
+  }
+  
+  .dark a:hover {
+    color: #93c5fd !important;
+  }
+}
+
+/* Skip link styling */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: #000000;
+  color: #ffffff;
+  padding: 8px;
+  text-decoration: none;
+  border-radius: 4px;
+  z-index: 100;
+}
+
+.skip-link:focus {
+  top: 6px;
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sr-only:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: inherit;
+}
+
+/* Windows High Contrast Mode Support */
+@media (-ms-high-contrast: active) {
+  /* High contrast mode specific styles */
+  .btn-primary,
+  .btn-secondary,
+  .btn-outline,
+  .btn-danger {
+    border: 2px solid ButtonText !important;
+  }
+  
+  input, select, textarea {
+    border: 2px solid ButtonText !important;
+  }
+  
+  .focus\:ring-blue-500:focus {
+    outline: 2px solid ButtonText !important;
+  }
+}
+
+/* Improved color contrast for status indicators */
+.status-active {
+  background-color: #16a34a !important;
+  color: #ffffff !important;
+}
+
+.status-inactive {
+  background-color: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+.status-pending {
+  background-color: #eab308 !important;
+  color: #000000 !important;
+}
+
+/* Better visibility for disabled states */
+.disabled,
+[disabled] {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+}
+
+/* Enhanced table accessibility */
+table {
+  border-collapse: collapse !important;
+}
+
+th, td {
+  border: 1px solid #d1d5db !important;
+  padding: 8px !important;
+}
+
+th {
+  background-color: #f9fafb !important;
+  font-weight: 600 !important;
+}
+
+/* Better form field visibility */
+.form-field {
+  margin-bottom: 16px !important;
+}
+
+.form-label {
+  font-weight: 600 !important;
+  margin-bottom: 4px !important;
+  display: block !important;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100% !important;
+  padding: 8px 12px !important;
+  border: 2px solid #d1d5db !important;
+  border-radius: 4px !important;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 2px #2563eb !important;
+  outline: none !important;
+}
+
+.form-error {
+  color: #dc2626 !important;
+  font-size: 14px !important;
+  margin-top: 4px !important;
+}
+
+/* Loading states accessibility */
+.loading-spinner {
+  border: 2px solid #f3f4f6 !important;
+  border-top: 2px solid #2563eb !important;
+  border-radius: 50% !important;
+  width: 20px !important;
+  height: 20px !important;
+  animation: spin 1s linear infinite !important;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Better modal accessibility */
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+.modal-content {
+  background-color: #ffffff !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Better notification accessibility */
+.notification {
+  padding: 16px !important;
+  border-radius: 8px !important;
+  margin-bottom: 16px !important;
+  border: 1px solid transparent !important;
+}
+
+.notification-success {
+  background-color: #f0fdf4 !important;
+  border-color: #16a34a !important;
+  color: #15803d !important;
+}
+
+.notification-error {
+  background-color: #fef2f2 !important;
+  border-color: #ef4444 !important;
+  color: #dc2626 !important;
+}
+
+.notification-warning {
+  background-color: #fefce8 !important;
+  border-color: #eab308 !important;
+  color: #a16207 !important;
+}
+
+.notification-info {
+  background-color: #eff6ff !important;
+  border-color: #3b82f6 !important;
+  color: #1d4ed8 !important;
+}

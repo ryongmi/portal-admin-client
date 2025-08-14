@@ -1,0 +1,205 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Force remove underlines from all elements */
+a,
+a *,
+button,
+button *,
+[role="button"],
+[role="button"] *,
+.btn,
+.btn *,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  text-decoration: none !important;
+}
+
+/* Complete focus outline removal for a tags and buttons */
+a,
+a:focus,
+a:focus-visible,
+a:hover,
+a:active,
+a:visited,
+button,
+button:focus,
+button:focus-visible,
+button:hover,
+button:active,
+[role="button"],
+[role="button"]:focus,
+[role="button"]:focus-visible,
+[role="button"]:hover,
+[role="button"]:active,
+.btn,
+.btn:focus,
+.btn:focus-visible,
+.btn:hover,
+.btn:active,
+input[type="button"],
+input[type="button"]:focus,
+input[type="button"]:hover,
+input[type="button"]:active,
+input[type="submit"],
+input[type="submit"]:focus,
+input[type="submit"]:hover,
+input[type="submit"]:active,
+input[type="reset"],
+input[type="reset"]:focus,
+input[type="reset"]:hover,
+input[type="reset"]:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Additional specific targeting for stubborn focus outlines */
+a:focus:not(:focus-visible),
+button:focus:not(:focus-visible) {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+
+a:hover,
+a:hover *,
+a:focus,
+a:focus *,
+a:active,
+a:active *,
+a:visited,
+a:visited *,
+button:hover,
+button:hover *,
+button:focus,
+button:focus *,
+button:active,
+button:active *,
+[role="button"]:hover,
+[role="button"]:hover *,
+[role="button"]:focus,
+[role="button"]:focus *,
+[role="button"]:active,
+[role="button"]:active *,
+.btn:hover,
+.btn:hover *,
+.btn:focus,
+.btn:focus *,
+.btn:active,
+.btn:active *,
+input[type="button"]:hover,
+input[type="button"]:focus,
+input[type="button"]:active,
+input[type="submit"]:hover,
+input[type="submit"]:focus,
+input[type="submit"]:active,
+input[type="reset"]:hover,
+input[type="reset"]:focus,
+input[type="reset"]:active {
+  text-decoration: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .no-underline {
+    text-decoration: none !important;
+  }
+}
+
+@layer base {
+  /* Remove all underlines and focus styles globally */
+  a,
+  a:hover,
+  a:focus,
+  a:active,
+  a:visited {
+    text-decoration: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+}
+
+@layer components {
+  /* Button base styles - no underlines and no outlines for buttons and all children */
+  button,
+  button *,
+  button span,
+  button div,
+  [role="button"],
+  [role="button"] *,
+  [role="button"] span,
+  [role="button"] div,
+  .btn,
+  .btn *,
+  .btn span,
+  .btn div {
+    text-decoration: none !important;
+    outline: none !important;
+  }
+  
+  button:hover,
+  button:hover *,
+  button:hover span,
+  button:hover div,
+  button:focus,
+  button:focus *,
+  button:focus span,
+  button:focus div,
+  button:active,
+  button:active *,
+  button:active span,
+  button:active div,
+  [role="button"]:hover,
+  [role="button"]:hover *,
+  [role="button"]:hover span,
+  [role="button"]:hover div,
+  [role="button"]:focus,
+  [role="button"]:focus *,
+  [role="button"]:focus span,
+  [role="button"]:focus div,
+  [role="button"]:active,
+  [role="button"]:active *,
+  [role="button"]:active span,
+  [role="button"]:active div,
+  .btn:hover,
+  .btn:hover *,
+  .btn:hover span,
+  .btn:hover div,
+  .btn:focus,
+  .btn:focus *,
+  .btn:focus span,
+  .btn:focus div,
+  .btn:active,
+  .btn:active *,
+  .btn:active span,
+  .btn:active div {
+    text-decoration: none !important;
+    outline: none !important;
+  }
+}
