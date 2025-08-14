@@ -1,36 +1,158 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Portal Admin Client
 
-## Getting Started
+**krgeobuk 생태계의 통합 관리자 포탈**
 
-First, run the development server:
+Portal Admin Client는 krgeobuk 마이크로서비스 생태계의 중앙 관리 인터페이스입니다. 시스템 관리자가 사용자, 역할, 권한, 서비스를 통합 관리할 수 있는 현대적이고 직관적인 웹 애플리케이션입니다.
+
+## 🎯 프로젝트 목적
+
+Portal Admin Client는 다음과 같은 목적으로 개발되었습니다:
+
+- **통합 관리**: 여러 마이크로서비스의 관리 기능을 하나의 인터페이스에서 제공
+- **보안 강화**: 관리자 전용 인터페이스로 시스템 보안성 향상
+- **사용자 경험**: 직관적이고 현대적인 UI/UX로 관리 효율성 증대
+- **확장성**: 새로운 서비스 추가 시 쉽게 확장 가능한 아키텍처
+
+## 🚀 주요 기능
+
+### 📊 대시보드
+- 실시간 시스템 현황 모니터링
+- 사용자 활동 통계 및 분석
+- 시스템 건강성 체크
+- 주요 지표 시각화
+
+### 👥 사용자 관리
+- 전체 사용자 조회 및 검색
+- 사용자 정보 수정 및 관리
+- 사용자별 역할 할당
+- 계정 상태 관리 (활성/비활성)
+
+### 🛡️ 역할 및 권한 관리
+- **역할 관리**: 시스템 역할 생성, 수정, 삭제
+- **권한 관리**: 세분화된 권한 체계 관리
+- **역할-권한 매핑**: 역할별 권한 할당 및 관리
+- **사용자-역할 할당**: 사용자별 역할 부여
+
+### ⚙️ 서비스 관리
+- 등록된 서비스 조회 및 관리
+- 서비스 가시성 설정
+- 서비스별 접근 권한 제어
+- 서비스 상태 모니터링
+
+### 👤 프로필 관리
+- 관리자 프로필 정보 관리
+- 비밀번호 변경
+- 개인 설정 관리
+
+## 🔐 접근 권한
+
+**⚠️ 중요: 이 애플리케이션은 관리자 전용입니다.**
+
+Portal Admin Client에 접근하려면 다음 조건을 만족해야 합니다:
+
+- krgeobuk 계정으로 로그인
+- 다음 중 하나 이상의 관리자 역할 보유:
+  - `super-admin` (최고 관리자)
+  - `system-admin` (시스템 관리자)
+  - `portal-admin` (포탈 관리자)
+  - `admin` (일반 관리자)
+
+관리자 권한이 없는 사용자는 자동으로 일반 사용자 포탈로 리다이렉트됩니다.
+
+## 💻 시스템 요구사항
+
+- **Node.js**: 18.x 이상
+- **NPM**: 9.x 이상
+- **브라우저**: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
+
+## 🚦 시작하기
+
+### 1. 환경 설정
+
+```bash
+# 환경 파일 복사
+cp .env.example .env.local
+
+# 환경 변수 설정 (필요시 수정)
+# NEXT_PUBLIC_AUTH_SERVER_URL=http://localhost:8000
+# NEXT_PUBLIC_AUTHZ_SERVER_URL=http://localhost:8100
+# NEXT_PUBLIC_ADMIN_CLIENT_URL=http://localhost:3210
+```
+
+### 2. 의존성 설치
+
+```bash
+npm install
+```
+
+### 3. 개발 서버 실행
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 4. 접속
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+브라우저에서 [http://localhost:3210](http://localhost:3210)으로 접속합니다.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🔗 연동 서비스
 
-## Learn More
+Portal Admin Client는 다음 백엔드 서비스와 연동됩니다:
 
-To learn more about Next.js, take a look at the following resources:
+| 서비스 | 포트 | 역할 | 상태 |
+|--------|------|------|------|
+| **auth-server** | 8000 | 사용자 인증 및 OAuth | 필수 |
+| **authz-server** | 8100 | 역할 및 권한 관리 | 필수 |
+| **portal-server** | 8200 | 서비스 등록 및 관리 | 필수 |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 서비스 시작 순서
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **auth-server** 시작
+2. **authz-server** 시작  
+3. **portal-server** 시작
+4. **portal-admin-client** 시작
 
-## Deploy on Vercel
+## 📱 화면 구성
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 주요 페이지
+- **홈 (`/`)**: 대시보드 및 시스템 현황
+- **사용자 관리 (`/users`)**: 전체 사용자 관리
+- **역할 관리 (`/roles`)**: 시스템 역할 관리
+- **권한 관리 (`/permissions`)**: 권한 체계 관리
+- **서비스 관리 (`/services`)**: 등록 서비스 관리
+- **프로필 (`/profile`)**: 관리자 개인정보
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 반응형 디자인
+- **데스크톱**: 최적화된 관리 인터페이스
+- **태블릿**: 터치 친화적 UI
+- **모바일**: 핵심 기능 중심 간소화
+
+## 🎨 디자인 시스템
+
+- **컬러**: 전문적이고 신뢰감 있는 블루-퍼플 그라데이션
+- **타이포그래피**: 가독성을 고려한 시스템 폰트
+- **아이콘**: Lucide React 아이콘 시스템
+- **애니메이션**: 부드러운 트랜지션과 마이크로 인터랙션
+
+## 🛠️ 기술 스택
+
+- **Frontend**: Next.js 15, React 18, TypeScript
+- **Styling**: Tailwind CSS
+- **State Management**: Redux Toolkit
+- **Forms**: React Hook Form
+- **HTTP Client**: Axios + @krgeobuk/http-client
+- **Icons**: Lucide React
+
+## 📞 지원 및 문의
+
+- **개발팀 문의**: krgeobuk 개발팀
+- **버그 리포트**: 내부 이슈 트래커
+- **기능 요청**: 제품 기획팀
+
+## 📄 라이선스
+
+이 프로젝트는 krgeobuk 내부 사용을 위한 비공개 소프트웨어입니다.
+
+---
+
+**개발자를 위한 상세 가이드는 [CLAUDE.md](./CLAUDE.md) 파일을 참조하세요.**
