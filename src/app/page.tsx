@@ -16,7 +16,8 @@ import ErrorMessage from '@/components/common/ErrorMessage';
 
 export default function AdminDashboardPage(): JSX.Element {
   const router = useRouter();
-  const { statistics, loading, error, lastUpdated, fetchStatistics, getSystemHealth } = useDashboard();
+  const { statistics, loading, error, lastUpdated, fetchStatistics, getSystemHealth } =
+    useDashboard();
 
   if (loading && !statistics) {
     return (
@@ -275,3 +276,4 @@ export default function AdminDashboardPage(): JSX.Element {
     </AdminAuthGuard>
   );
 }
+
