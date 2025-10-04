@@ -22,6 +22,10 @@ export const httpClient = new HttpClient(
       baseURL: process.env.NEXT_PUBLIC_PORTAL_SERVER_URL!,
       withCredentials: true,
     },
+    mypick: {
+      baseURL: process.env.NEXT_PUBLIC_PORTAL_SERVER_URL!,
+      withCredentials: true,
+    },
   },
   {
     refreshUrl: process.env.NEXT_PUBLIC_TOKEN_REFRESH_URL!,
@@ -30,8 +34,11 @@ export const httpClient = new HttpClient(
   {
     // 환경변수에서 허용된 오리진 읽기
     allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || [
+      'http://krgeobuk.local:8000',
       'http://localhost:8000',
+      'http://krgeobuk.local:3000',
       'http://localhost:3000',
+      'http://krgeobuk.local:3200',
       'http://localhost:3200',
     ],
     enableCSRF: true,
@@ -116,4 +123,3 @@ export const portalApi = {
 
 // 기본 내보내기 (기존 방식과 호환)
 export { httpClient as default };
-
