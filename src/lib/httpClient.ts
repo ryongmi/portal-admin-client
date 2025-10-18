@@ -34,11 +34,8 @@ export const httpClient = new HttpClient(
   {
     // 환경변수에서 허용된 오리진 읽기
     allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || [
-      'http://krgeobuk.local:8000',
       'http://localhost:8000',
-      'http://krgeobuk.local:3000',
       'http://localhost:3000',
-      'http://krgeobuk.local:3200',
       'http://localhost:3200',
     ],
     enableCSRF: true,

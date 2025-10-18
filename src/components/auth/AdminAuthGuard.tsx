@@ -28,7 +28,7 @@ export const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
     // 관리자 권한 체크
     if (isAuthenticated && user && !hasAdminRole(user)) {
       // 권한이 없는 사용자는 일반 포털로 리다이렉트
-      window.location.href = process.env.NEXT_PUBLIC_PORTAL_CLIENT_URL || 'http://krgeobuk.local:3200';
+      window.location.href = process.env.NEXT_PUBLIC_PORTAL_CLIENT_URL || 'http://localhost:3200';
       return;
     }
   }, [isAuthenticated, user, isLoading]);
