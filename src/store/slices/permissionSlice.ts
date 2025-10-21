@@ -1,16 +1,16 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { authzApi } from '@/lib/httpClient';
+import { permissionService } from '@/services/permissionService';
+import type { ServiceError } from '@/services/base';
 import type {
-  Permission,
+  // Permission,
   PermissionSearchResult,
   PermissionSearchQuery,
   CreatePermissionRequest,
   UpdatePermissionRequest,
   CheckPermissionRequest,
-  PermissionCheckResponse,
+  // PermissionCheckResponse,
   PermissionDetail,
 } from '@/types';
-import type { ApiResponse, PaginatedResponse } from '@/lib/httpClient';
 import type { PaginatedResultBase } from '@krgeobuk/core/interfaces';
 
 interface PermissionState {
@@ -41,18 +41,10 @@ export const fetchPermissions = createAsyncThunk(
   'permission/fetchPermissions',
   async (query: PermissionSearchQuery = {}, { rejectWithValue }) => {
     try {
-      const response = await authzApi.get<ApiResponse<PaginatedResponse<Permission>>>(
-        '/permissions',
-        {
-          params: query,
-        }
-      );
-      return response.data.data;
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(
-        axiosError.response?.data?.message || '권한 목록을 불러올 수 없습니다.'
-      );
+      return await permissionService.getPermissions(query);
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -62,15 +54,10 @@ export const fetchPermissionById = createAsyncThunk(
   'permission/fetchPermissionById',
   async (permissionId: string, { rejectWithValue }) => {
     try {
-      const response = await authzApi.get<ApiResponse<PermissionDetail>>(
-        `/permissions/${permissionId}`
-      );
-      return response.data.data;
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(
-        axiosError.response?.data?.message || '권한 정보를 불러올 수 없습니다.'
-      );
+      return await permissionService.getPermissionById(permissionId);
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -80,11 +67,11 @@ export const createPermission = createAsyncThunk(
   'permission/createPermission',
   async (permissionData: CreatePermissionRequest, { rejectWithValue }) => {
     try {
-      await authzApi.post<ApiResponse<void>>('/permissions', permissionData);
+      await permissionService.createPermission(permissionData);
       return permissionData;
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(axiosError.response?.data?.message || '권한 생성에 실패했습니다.');
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -100,11 +87,11 @@ export const updatePermission = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      await authzApi.patch<ApiResponse<void>>(`/permissions/${permissionId}`, permissionData);
+      await permissionService.updatePermission(permissionId, permissionData);
       return { permissionId, permissionData };
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(axiosError.response?.data?.message || '권한 수정에 실패했습니다.');
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -114,11 +101,11 @@ export const deletePermission = createAsyncThunk(
   'permission/deletePermission',
   async (permissionId: string, { rejectWithValue }) => {
     try {
-      await authzApi.delete<ApiResponse<void>>(`/permissions/${permissionId}`);
+      await permissionService.deletePermission(permissionId);
       return permissionId;
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(axiosError.response?.data?.message || '권한 삭제에 실패했습니다.');
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -131,11 +118,11 @@ export const assignPermissionToRole = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      await authzApi.post<ApiResponse<void>>(`/roles/${roleId}/permissions/${permissionId}`);
+      await permissionService.assignPermissionToRole(roleId, permissionId);
       return { roleId, permissionId };
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(axiosError.response?.data?.message || '권한 할당에 실패했습니다.');
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -148,11 +135,11 @@ export const removePermissionFromRole = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      await authzApi.delete<ApiResponse<void>>(`/roles/${roleId}/permissions/${permissionId}`);
+      await permissionService.removePermissionFromRole(roleId, permissionId);
       return { roleId, permissionId };
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(axiosError.response?.data?.message || '권한 해제에 실패했습니다.');
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -165,15 +152,11 @@ export const assignMultiplePermissionsToRole = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      await authzApi.post<ApiResponse<void>>(`/roles/${roleId}/permissions/batch`, {
-        permissionIds,
-      });
+      await permissionService.assignMultiplePermissionsToRole(roleId, permissionIds);
       return { roleId, permissionIds };
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(
-        axiosError.response?.data?.message || '다중 권한 할당에 실패했습니다.'
-      );
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -186,11 +169,11 @@ export const replaceRolePermissions = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      await authzApi.put<ApiResponse<void>>(`/roles/${roleId}/permissions`, { permissionIds });
+      await permissionService.replaceRolePermissions(roleId, permissionIds);
       return { roleId, permissionIds };
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(axiosError.response?.data?.message || '권한 교체에 실패했습니다.');
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -200,14 +183,10 @@ export const checkUserPermission = createAsyncThunk(
   'permission/checkUserPermission',
   async (checkData: CheckPermissionRequest, { rejectWithValue }) => {
     try {
-      const response = await authzApi.post<ApiResponse<PermissionCheckResponse>>(
-        '/authorization/check-permission',
-        checkData
-      );
-      return response.data.data;
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(axiosError.response?.data?.message || '권한 확인에 실패했습니다.');
+      return await permissionService.checkUserPermission(checkData);
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -217,15 +196,10 @@ export const fetchUserPermissions = createAsyncThunk(
   'permission/fetchUserPermissions',
   async (userId: string, { rejectWithValue }) => {
     try {
-      const response = await authzApi.get<ApiResponse<string[]>>(
-        `/authorization/users/${userId}/permissions`
-      );
-      return response.data.data;
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(
-        axiosError.response?.data?.message || '사용자 권한 목록을 불러올 수 없습니다.'
-      );
+      return await permissionService.getUserPermissions(userId);
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -415,4 +389,3 @@ const permissionSlice = createSlice({
 
 export const { clearError, setSelectedPermission, clearPermissions } = permissionSlice.actions;
 export default permissionSlice.reducer;
-

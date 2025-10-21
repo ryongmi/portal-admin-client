@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { PermissionService } from '@/services/permissionService';
+import { permissionService } from '@/services/permissionService';
 import type { PermissionSearchQuery, PermissionSearchResult, PermissionDetail } from '@krgeobuk/permission';
 import type { PaginatedResult } from '@krgeobuk/core';
 
@@ -33,9 +33,9 @@ export function usePermissions(): {
     setLoading(true);
     setError(null);
     try {
-      const response = await PermissionService.getPermissions(query);
-      setPermissions(response.data.items);
-      return response.data;
+      const response = await permissionService.getPermissions(query);
+      setPermissions(response.items);
+      return response;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '권한 목록 조회에 실패했습니다.';
       setError(errorMessage);
@@ -49,8 +49,8 @@ export function usePermissions(): {
     setLoading(true);
     setError(null);
     try {
-      const response = await PermissionService.getPermissionById(id);
-      return response.data;
+      const response = await permissionService.getPermissionById(id);
+      return response;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '권한 상세 정보 조회에 실패했습니다.';
       setError(errorMessage);
@@ -64,8 +64,8 @@ export function usePermissions(): {
     setLoading(true);
     setError(null);
     try {
-      const response = await PermissionService.createPermission(permissionData);
-      return response.data;
+      const response = await permissionService.createPermission(permissionData);
+      return response;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '권한 생성에 실패했습니다.';
       setError(errorMessage);
@@ -79,8 +79,8 @@ export function usePermissions(): {
     setLoading(true);
     setError(null);
     try {
-      const response = await PermissionService.updatePermission(id, permissionData);
-      return response.data;
+      const response = await permissionService.updatePermission(id, permissionData);
+      return response;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '권한 수정에 실패했습니다.';
       setError(errorMessage);
@@ -94,7 +94,7 @@ export function usePermissions(): {
     setLoading(true);
     setError(null);
     try {
-      await PermissionService.deletePermission(id);
+      await permissionService.deletePermission(id);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '권한 삭제에 실패했습니다.';
       setError(errorMessage);

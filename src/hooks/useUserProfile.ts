@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { UserService } from '@/services/userService';
+import { userService } from '@/services/userService';
 import type { UserProfile } from '@krgeobuk/user/interfaces';
 
 interface UseUserProfileReturn {
@@ -30,9 +30,9 @@ export const useUserProfile = (): UseUserProfileReturn => {
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await UserService.getMyProfile();
-      setUserProfile(response.data);
+
+      const response = await userService.getMyProfile();
+      setUserProfile(response);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : '사용자 프로필을 불러오는데 실패했습니다.';
       setError(errorMessage);

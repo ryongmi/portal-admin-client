@@ -15,7 +15,7 @@ import { toast } from '@/components/common/ToastContainer';
 import { useLoadingState } from '@/hooks/useLoadingState';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
 import type { RoleDetail, PermissionSearchResult, PermissionDetail } from '@/types';
-import { RolePermissionService } from '@/services/rolePermissionService';
+import { permissionService } from '@/services/permissionService';
 
 // PermissionSearchResult를 PermissionDetail로 안전하게 변환하는 함수
 const _convertToPermissionDetail = (permission: PermissionSearchResult): PermissionDetail => ({
@@ -82,8 +82,8 @@ const RolePermissionModal = memo<RolePermissionModalProps>(function RolePermissi
   // 역할의 현재 권한 로드
   const loadRolePermissions = async (roleId: string): Promise<void> => {
     try {
-      const response = await RolePermissionService.getRolePermissions(roleId);
-      const permissionIds = response.data || [];
+      const response = await permissionService.getRolePermissions(roleId);
+      const permissionIds = response || [];
       
       // 권한 ID 목록을 기반으로 실제 권한 정보 매핑 및 타입 변환
       const rolePermissions = permissions
@@ -177,7 +177,7 @@ const RolePermissionModal = memo<RolePermissionModalProps>(function RolePermissi
 
     try {
       const newPermissionIds = Array.from(selectedPermissions);
-      await RolePermissionService.replaceRolePermissions(role.id!, newPermissionIds);
+      await permissionService.replaceRolePermissions(role.id!, newPermissionIds);
 
       toast.success('권한 업데이트 완료', `${role.name} 역할의 권한이 성공적으로 업데이트되었습니다.`);
       onClose();

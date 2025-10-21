@@ -1,44 +1,60 @@
-import { authApi, type ApiResponse } from "@/lib/httpClient";
-import type { UserProfile } from "@krgeobuk/user/interfaces";
+import { authApi } from '@/lib/httpClient';
+import type { UserProfile } from '@krgeobuk/user/interfaces';
+import { BaseService } from './base';
 
 // 공유 라이브러리 인터페이스 활용
-import type { 
+import type {
   UserSearchQuery,
   UserSearchResult,
   UserDetail,
   UpdateMyProfile,
-  ChangePassword
-} from "@krgeobuk/user";
-import type { PaginatedResult } from "@krgeobuk/core";
+  ChangePassword,
+} from '@krgeobuk/user';
+import type { PaginatedResult } from '@krgeobuk/core';
+import type { User } from '@/types';
 
-export class UserService {
+/**
+ * 사용자 관리 Service
+ *
+ * 사용자 조회, 수정, 삭제 등을 담당
+ */
+export class UserService extends BaseService {
   /**
    * 사용자 목록 조회 (페이지네이션, 검색)
    */
-  static async getUsers(
-    query: UserSearchQuery = {}
-  ): Promise<ApiResponse<PaginatedResult<UserSearchResult>>> {
-    const response = await authApi.get<ApiResponse<PaginatedResult<UserSearchResult>>>(
-      "/users",
-      { params: query }
-    );
-    return response.data;
+  async getUsers(query: UserSearchQuery = {}): Promise<PaginatedResult<UserSearchResult>> {
+    try {
+      const response = await authApi.get<PaginatedResult<UserSearchResult>>('/users', {
+        params: query,
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
   /**
    * 사용자 상세 조회
    */
-  static async getUserById(id: string): Promise<ApiResponse<UserDetail>> {
-    const response = await authApi.get<ApiResponse<UserDetail>>(`/users/${id}`);
-    return response.data;
+  async getUserById(id: string): Promise<UserDetail> {
+    try {
+      const response = await authApi.get<UserDetail>(`/users/${id}`);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
   /**
    * 현재 사용자 정보 조회 (기본)
    */
-  static async getMe(): Promise<ApiResponse<UserDetail>> {
-    const response = await authApi.get<ApiResponse<UserDetail>>("/users/me");
-    return response.data;
+  async getMe(): Promise<UserDetail> {
+    try {
+      const response = await authApi.get<UserDetail>('/users/me');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
   /**
@@ -48,42 +64,83 @@ export class UserService {
    * - 권한 정보 (roles, permissions)
    * - 사용 가능한 서비스 목록
    */
-  static async getMyProfile(): Promise<ApiResponse<UserProfile>> {
-    const response = await authApi.get<ApiResponse<UserProfile>>("/users/me");
-    return response.data;
+  async getMyProfile(): Promise<UserProfile> {
+    try {
+      const response = await authApi.get<UserProfile>('/users/me');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
   /**
    * 현재 사용자 프로필 수정
    */
-  static async updateMyProfile(
-    profileData: UpdateMyProfile
-  ): Promise<ApiResponse<UserDetail>> {
-    const response = await authApi.patch<ApiResponse<UserDetail>>(
-      "/users/me",
-      profileData
-    );
-    return response.data;
+  async updateMyProfile(profileData: UpdateMyProfile): Promise<void> {
+    try {
+      await authApi.patch<void>('/users/me', profileData);
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
   /**
    * 현재 사용자 비밀번호 변경
    */
-  static async changePassword(
-    passwordData: ChangePassword
-  ): Promise<ApiResponse<null>> {
-    const response = await authApi.patch<ApiResponse<null>>(
-      "/users/me/password",
-      passwordData
-    );
-    return response.data;
+  async changePassword(passwordData: ChangePassword): Promise<void> {
+    try {
+      await authApi.patch<void>('/users/me/password', passwordData);
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
   /**
    * 현재 사용자 계정 삭제
    */
-  static async deleteMyAccount(): Promise<ApiResponse<null>> {
-    const response = await authApi.delete<ApiResponse<null>>("/users/me");
-    return response.data;
+  async deleteMyAccount(): Promise<void> {
+    try {
+      await authApi.delete<void>('/users/me');
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  /**
+   * 관리자 기능: 사용자 생성
+   */
+  async createUser(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
+    try {
+      const response = await authApi.post<User>('/users', userData);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  /**
+   * 관리자 기능: 사용자 수정
+   */
+  async updateUser(userId: string, userData: Partial<User>): Promise<User> {
+    try {
+      const response = await authApi.patch<User>(`/users/${userId}`, userData);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  /**
+   * 관리자 기능: 사용자 삭제
+   */
+  async deleteUser(userId: string): Promise<void> {
+    try {
+      await authApi.delete<void>(`/users/${userId}`);
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 }
+
+// 싱글톤 인스턴스
+export const userService = new UserService();

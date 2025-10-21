@@ -1,15 +1,15 @@
 import { useState, useCallback } from 'react';
-import { UserService } from '@/services/userService';
+import { userService } from '@/services/userService';
 import type { UserSearchQuery, UserSearchResult, UserDetail } from '@krgeobuk/user';
-// Paginated result type available if needed
+import type { PaginatedResult } from '@krgeobuk/core';
 
 export function useUsers(): {
   users: UserSearchResult[];
   loading: boolean;
   error: string | null;
-  fetchUsers: (query?: UserSearchQuery) => Promise<{ items: UserSearchResult[] }>;
+  fetchUsers: (query?: UserSearchQuery) => Promise<PaginatedResult<UserSearchResult>>;
   getUserById: (id: string) => Promise<UserDetail>;
-  updateProfile: (profileData: { nickname: string; profileImageUrl: string }) => Promise<unknown>;
+  updateProfile: (profileData: { nickname: string; profileImageUrl: string }) => Promise<void>;
   changePassword: (passwordData: { currentPassword: string; newPassword: string }) => Promise<void>;
   deleteAccount: () => Promise<void>;
 } {
@@ -21,9 +21,9 @@ export function useUsers(): {
     setLoading(true);
     setError(null);
     try {
-      const response = await UserService.getUsers(query);
-      setUsers(response.data.items);
-      return response.data;
+      const response = await userService.getUsers(query);
+      setUsers(response.items);
+      return response;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '사용자 목록 조회에 실패했습니다.';
       setError(errorMessage);
@@ -37,8 +37,8 @@ export function useUsers(): {
     setLoading(true);
     setError(null);
     try {
-      const response = await UserService.getUserById(id);
-      return response.data;
+      const response = await userService.getUserById(id);
+      return response;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '사용자 상세 정보 조회에 실패했습니다.';
       setError(errorMessage);
@@ -52,8 +52,7 @@ export function useUsers(): {
     setLoading(true);
     setError(null);
     try {
-      const response = await UserService.updateMyProfile(profileData);
-      return response.data;
+      await userService.updateMyProfile(profileData);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '프로필 수정에 실패했습니다.';
       setError(errorMessage);
@@ -67,7 +66,7 @@ export function useUsers(): {
     setLoading(true);
     setError(null);
     try {
-      await UserService.changePassword(passwordData);
+      await userService.changePassword(passwordData);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '비밀번호 변경에 실패했습니다.';
       setError(errorMessage);
@@ -81,7 +80,7 @@ export function useUsers(): {
     setLoading(true);
     setError(null);
     try {
-      await UserService.deleteMyAccount();
+      await userService.deleteMyAccount();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '계정 삭제에 실패했습니다.';
       setError(errorMessage);

@@ -22,10 +22,10 @@ export const httpClient = new HttpClient(
       baseURL: process.env.NEXT_PUBLIC_PORTAL_SERVER_URL!,
       withCredentials: true,
     },
-    mypick: {
-      baseURL: process.env.NEXT_PUBLIC_PORTAL_SERVER_URL!,
-      withCredentials: true,
-    },
+    // mypick: {
+    //   baseURL: process.env.NEXT_PUBLIC_PORTAL_SERVER_URL!,
+    //   withCredentials: true,
+    // },
   },
   {
     refreshUrl: process.env.NEXT_PUBLIC_TOKEN_REFRESH_URL!,
@@ -33,11 +33,7 @@ export const httpClient = new HttpClient(
   },
   {
     // 환경변수에서 허용된 오리진 읽기
-    allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || [
-      'http://localhost:8000',
-      'http://localhost:3000',
-      'http://localhost:3200',
-    ],
+    allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || ['localhost', '127.0.0.1'],
     enableCSRF: true,
     enableInputValidation: true,
     enableSecurityLogging: true,

@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { authzApi } from '@/lib/httpClient';
+import { roleService } from '@/services/roleService';
+import type { ServiceError } from '@/services/base';
 import type {
   RoleSearchResult,
   RoleDetail,
@@ -7,7 +8,6 @@ import type {
   CreateRoleRequest,
   UpdateRoleRequest,
 } from '@/types';
-import type { ApiResponse, PaginatedResponse } from '@/lib/httpClient';
 import type { PaginatedResultBase } from '@krgeobuk/core/interfaces';
 
 interface RoleState {
@@ -38,18 +38,10 @@ export const fetchRoles = createAsyncThunk(
   'role/fetchRoles',
   async (query: RoleSearchQuery = {}, { rejectWithValue }) => {
     try {
-      const response = await authzApi.get<ApiResponse<PaginatedResponse<RoleSearchResult>>>(
-        '/roles?page=1&limit=30',
-        {
-          params: query,
-        }
-      );
-      return response.data.data;
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(
-        axiosError.response?.data?.message || '역할 목록을 불러올 수 없습니다.'
-      );
+      return await roleService.getRoles(query);
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -59,13 +51,10 @@ export const fetchRoleById = createAsyncThunk(
   'role/fetchRoleById',
   async (roleId: string, { rejectWithValue }) => {
     try {
-      const response = await authzApi.get<ApiResponse<RoleDetail>>(`/roles/${roleId}`);
-      return response.data.data;
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(
-        axiosError.response?.data?.message || '역할 정보를 불러올 수 없습니다.'
-      );
+      return await roleService.getRoleById(roleId);
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -75,11 +64,11 @@ export const createRole = createAsyncThunk(
   'role/createRole',
   async (roleData: CreateRoleRequest, { rejectWithValue }) => {
     try {
-      await authzApi.post<ApiResponse<void>>('/roles', roleData);
+      await roleService.createRole(roleData);
       return roleData;
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(axiosError.response?.data?.message || '역할 생성에 실패했습니다.');
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -92,11 +81,11 @@ export const updateRole = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      await authzApi.patch<ApiResponse<void>>(`/roles/${roleId}`, roleData);
+      await roleService.updateRole(roleId, roleData);
       return { roleId, roleData };
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(axiosError.response?.data?.message || '역할 수정에 실패했습니다.');
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -106,11 +95,11 @@ export const deleteRole = createAsyncThunk(
   'role/deleteRole',
   async (roleId: string, { rejectWithValue }) => {
     try {
-      await authzApi.delete<ApiResponse<void>>(`/roles/${roleId}`);
+      await roleService.deleteRole(roleId);
       return roleId;
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(axiosError.response?.data?.message || '역할 삭제에 실패했습니다.');
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -120,11 +109,11 @@ export const assignRoleToUser = createAsyncThunk(
   'role/assignRoleToUser',
   async ({ userId, roleId }: { userId: string; roleId: string }, { rejectWithValue }) => {
     try {
-      await authzApi.post<ApiResponse<void>>(`/users/${userId}/roles/${roleId}`);
+      await roleService.assignRoleToUser(userId, roleId);
       return { userId, roleId };
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(axiosError.response?.data?.message || '역할 할당에 실패했습니다.');
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -134,11 +123,11 @@ export const removeRoleFromUser = createAsyncThunk(
   'role/removeRoleFromUser',
   async ({ userId, roleId }: { userId: string; roleId: string }, { rejectWithValue }) => {
     try {
-      await authzApi.delete<ApiResponse<void>>(`/users/${userId}/roles/${roleId}`);
+      await roleService.removeRoleFromUser(userId, roleId);
       return { userId, roleId };
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(axiosError.response?.data?.message || '역할 해제에 실패했습니다.');
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -148,13 +137,11 @@ export const assignMultipleRolesToUser = createAsyncThunk(
   'role/assignMultipleRolesToUser',
   async ({ userId, roleIds }: { userId: string; roleIds: string[] }, { rejectWithValue }) => {
     try {
-      await authzApi.post<ApiResponse<void>>(`/users/${userId}/roles/batch`, { roleIds });
+      await roleService.assignMultipleRolesToUser(userId, roleIds);
       return { userId, roleIds };
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(
-        axiosError.response?.data?.message || '다중 역할 할당에 실패했습니다.'
-      );
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -164,11 +151,11 @@ export const replaceUserRoles = createAsyncThunk(
   'role/replaceUserRoles',
   async ({ userId, roleIds }: { userId: string; roleIds: string[] }, { rejectWithValue }) => {
     try {
-      await authzApi.put<ApiResponse<void>>(`/users/${userId}/roles`, { roleIds });
+      await roleService.replaceUserRoles(userId, roleIds);
       return { userId, roleIds };
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(axiosError.response?.data?.message || '역할 교체에 실패했습니다.');
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );

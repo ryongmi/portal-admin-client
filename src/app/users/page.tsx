@@ -14,7 +14,7 @@ import {
 } from '@/store/slices/userSlice';
 import { fetchRoles } from '@/store/slices/roleSlice';
 import { fetchServices } from '@/store/slices/serviceSlice';
-import { UserRoleService } from '@/services/userRoleService';
+import { roleService } from '@/services/roleService';
 import Layout from '@/components/layout/Layout';
 import AdminAuthGuard from '@/components/auth/AdminAuthGuard';
 import Table from '@/components/common/Table';
@@ -145,8 +145,8 @@ export default function ReduxUsersPage(): JSX.Element {
       // 상세 데이터 API 호출
       await dispatch(fetchUserById(userSearchResult.id)).unwrap();
       // 사용자의 현재 역할 목록 조회
-      const userRolesResponse = await UserRoleService.getUserRoles(userSearchResult.id);
-      setUserRoles(userRolesResponse.data);
+      const userRolesResponse = await roleService.getUserRoles(userSearchResult.id);
+      setUserRoles(userRolesResponse);
       setIsRoleModalOpen(true);
     } catch (error) {
       handleApiError(error);
@@ -162,11 +162,11 @@ export default function ReduxUsersPage(): JSX.Element {
 
   const handleAssignRole = withLoading('assignRole', async (userId: string, roleId: string) => {
     try {
-      await UserRoleService.assignUserRole(userId, roleId);
+      await roleService.assignUserRole(userId, roleId);
       toast.success('역할 할당 완료', '사용자에게 역할이 성공적으로 할당되었습니다.');
       // 사용자 역할 목록 새로고침
-      const userRolesResponse = await UserRoleService.getUserRoles(userId);
-      setUserRoles(userRolesResponse.data);
+      const userRolesResponse = await roleService.getUserRoles(userId);
+      setUserRoles(userRolesResponse);
       // 사용자 목록 새로고침
       dispatch(fetchUsers(searchQuery));
     } catch (error) {
@@ -176,11 +176,11 @@ export default function ReduxUsersPage(): JSX.Element {
 
   const handleRemoveRole = withLoading('removeRole', async (userId: string, roleId: string) => {
     try {
-      await UserRoleService.revokeUserRole(userId, roleId);
+      await roleService.revokeUserRole(userId, roleId);
       toast.success('역할 제거 완료', '사용자에서 역할이 성공적으로 제거되었습니다.');
       // 사용자 역할 목록 새로고침
-      const userRolesResponse = await UserRoleService.getUserRoles(userId);
-      setUserRoles(userRolesResponse.data);
+      const userRolesResponse = await roleService.getUserRoles(userId);
+      setUserRoles(userRolesResponse);
       // 사용자 목록 새로고침
       dispatch(fetchUsers(searchQuery));
     } catch (error) {

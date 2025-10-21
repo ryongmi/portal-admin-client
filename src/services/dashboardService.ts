@@ -1,6 +1,6 @@
-import { UserService } from './userService';
-import { RoleService } from './roleService';
-import { PermissionService } from './permissionService';
+import { userService } from './userService';
+import { roleService } from './roleService';
+import { permissionService } from './permissionService';
 // API response types available if needed
 
 // 대시보드 통계 타입 정의
@@ -51,22 +51,22 @@ export class DashboardService {
     try {
       // 실제 API 데이터 병렬 조회
       const [usersResponse, rolesResponse, permissionsResponse] = await Promise.all([
-        UserService.getUsers({ page: 1, limit: 100 }), // 기능 테스트용 적정값
-        RoleService.getRoles({ page: 1, limit: 100 }),
-        PermissionService.getPermissions({ page: 1, limit: 100 }),
+        userService.getUsers({ page: 1, limit: 100 }), // 기능 테스트용 적정값
+        roleService.getRoles({ page: 1, limit: 100 }),
+        permissionService.getPermissions({ page: 1, limit: 100 }),
         // UserService.getUsers({ page: 1, limit: 1000 }), // 충분히 큰 limit으로 전체 조회
         // RoleService.getRoles({ page: 1, limit: 1000 }),
         // PermissionService.getPermissions({ page: 1, limit: 1000 })
       ]);
 
       // 실제 데이터 가공
-      const users = usersResponse.data.items;
-      const roles = rolesResponse.data.items;
-      const permissions = permissionsResponse.data.items;
+      const users = usersResponse.items;
+      const roles = rolesResponse.items;
+      const permissions = permissionsResponse.items;
 
       // 사용자 통계 계산
       const userStats = {
-        total: usersResponse.data.pageInfo.totalItems,
+        total: usersResponse.pageInfo.totalItems,
         active: users.filter((user) => user.isIntegrated).length,
         inactive: users.filter((user) => !user.isIntegrated).length,
         emailVerified: users.filter((user) => user.isEmailVerified).length,
@@ -85,7 +85,7 @@ export class DashboardService {
       }, {} as Record<string, number>);
 
       const roleStats = {
-        total: rolesResponse.data.pageInfo.totalItems,
+        total: rolesResponse.pageInfo.totalItems,
         byService: rolesByService,
         avgPermissionsPerRole: Math.round(permissions.length / Math.max(roles.length, 1)),
       };
@@ -98,7 +98,7 @@ export class DashboardService {
       }, {} as Record<string, number>);
 
       const permissionStats = {
-        total: permissionsResponse.data.pageInfo.totalItems,
+        total: permissionsResponse.pageInfo.totalItems,
         byService: permissionsByService,
       };
 
@@ -125,8 +125,8 @@ export class DashboardService {
     try {
       // 각 서비스에 간단한 헬스체크 요청
       const healthChecks = await Promise.allSettled([
-        UserService.getUsers({ page: 1, limit: 15 }), // auth-server 체크
-        RoleService.getRoles({ page: 1, limit: 15 }), // authz-server 체크
+        userService.getUsers({ page: 1, limit: 15 }), // auth-server 체크
+        roleService.getRoles({ page: 1, limit: 15 }), // authz-server 체크
         // portal-server는 아직 API가 없으므로 Mock
       ]);
 
@@ -232,7 +232,6 @@ export class DashboardService {
     };
   }
 
-
   /**
    * 기본 통계 데이터 (에러 시 fallback)
    */
@@ -268,4 +267,3 @@ export class DashboardService {
     };
   }
 }
-

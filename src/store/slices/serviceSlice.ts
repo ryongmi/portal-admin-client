@@ -1,14 +1,14 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { portalApi } from '@/lib/httpClient';
+import { serviceService } from '@/services/serviceService';
+import type { ServiceError } from '@/services/base';
 import type {
-  Service,
+  // Service,
   ServiceSearchResult,
   ServiceDetail,
   ServiceSearchQuery,
   CreateServiceRequest,
   UpdateServiceRequest,
 } from '@/types';
-import type { ApiResponse, PaginatedResponse } from '@/lib/httpClient';
 import type { PaginatedResultBase } from '@krgeobuk/core/interfaces';
 
 interface ServiceState {
@@ -39,15 +39,10 @@ export const fetchServices = createAsyncThunk(
   'service/fetchServices',
   async (query: ServiceSearchQuery = {}, { rejectWithValue }) => {
     try {
-      const response = await portalApi.get<ApiResponse<PaginatedResponse<Service>>>('/services', {
-        params: query,
-      });
-      return response.data.data;
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(
-        axiosError.response?.data?.message || '서비스 목록을 불러올 수 없습니다.'
-      );
+      return await serviceService.getServices(query);
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -57,13 +52,10 @@ export const fetchServiceById = createAsyncThunk(
   'service/fetchServiceById',
   async (serviceId: string, { rejectWithValue }) => {
     try {
-      const response = await portalApi.get<ApiResponse<ServiceDetail>>(`/services/${serviceId}`);
-      return response.data.data;
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(
-        axiosError.response?.data?.message || '서비스 정보를 불러올 수 없습니다.'
-      );
+      return await serviceService.getServiceById(serviceId);
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -73,11 +65,11 @@ export const createService = createAsyncThunk(
   'service/createService',
   async (serviceData: CreateServiceRequest, { rejectWithValue }) => {
     try {
-      await portalApi.post<ApiResponse<void>>('/services', serviceData);
+      await serviceService.createService(serviceData);
       return serviceData;
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(axiosError.response?.data?.message || '서비스 생성에 실패했습니다.');
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -90,11 +82,11 @@ export const updateService = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      await portalApi.patch<ApiResponse<void>>(`/services/${serviceId}`, serviceData);
+      await serviceService.updateService(serviceId, serviceData);
       return { serviceId, serviceData };
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(axiosError.response?.data?.message || '서비스 수정에 실패했습니다.');
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -104,11 +96,11 @@ export const deleteService = createAsyncThunk(
   'service/deleteService',
   async (serviceId: string, { rejectWithValue }) => {
     try {
-      await portalApi.delete<ApiResponse<void>>(`/services/${serviceId}`);
+      await serviceService.deleteService(serviceId);
       return serviceId;
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(axiosError.response?.data?.message || '서비스 삭제에 실패했습니다.');
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -118,13 +110,11 @@ export const assignVisibleRoleToService = createAsyncThunk(
   'service/assignVisibleRoleToService',
   async ({ serviceId, roleId }: { serviceId: string; roleId: string }, { rejectWithValue }) => {
     try {
-      await portalApi.post<ApiResponse<void>>(`/services/${serviceId}/roles/${roleId}`);
+      await serviceService.assignVisibleRoleToService(serviceId, roleId);
       return { serviceId, roleId };
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(
-        axiosError.response?.data?.message || '가시성 역할 할당에 실패했습니다.'
-      );
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -134,13 +124,11 @@ export const removeVisibleRoleFromService = createAsyncThunk(
   'service/removeVisibleRoleFromService',
   async ({ serviceId, roleId }: { serviceId: string; roleId: string }, { rejectWithValue }) => {
     try {
-      await portalApi.delete<ApiResponse<void>>(`/services/${serviceId}/roles/${roleId}`);
+      await serviceService.removeVisibleRoleFromService(serviceId, roleId);
       return { serviceId, roleId };
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(
-        axiosError.response?.data?.message || '가시성 역할 해제에 실패했습니다.'
-      );
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -150,13 +138,11 @@ export const assignMultipleVisibleRolesToService = createAsyncThunk(
   'service/assignMultipleVisibleRolesToService',
   async ({ serviceId, roleIds }: { serviceId: string; roleIds: string[] }, { rejectWithValue }) => {
     try {
-      await portalApi.post<ApiResponse<void>>(`/services/${serviceId}/roles/batch`, { roleIds });
+      await serviceService.assignMultipleVisibleRolesToService(serviceId, roleIds);
       return { serviceId, roleIds };
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(
-        axiosError.response?.data?.message || '다중 가시성 역할 할당에 실패했습니다.'
-      );
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -166,13 +152,11 @@ export const replaceServiceVisibleRoles = createAsyncThunk(
   'service/replaceServiceVisibleRoles',
   async ({ serviceId, roleIds }: { serviceId: string; roleIds: string[] }, { rejectWithValue }) => {
     try {
-      await portalApi.put<ApiResponse<void>>(`/services/${serviceId}/roles`, { roleIds });
+      await serviceService.replaceServiceVisibleRoles(serviceId, roleIds);
       return { serviceId, roleIds };
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(
-        axiosError.response?.data?.message || '가시성 역할 교체에 실패했습니다.'
-      );
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -182,13 +166,11 @@ export const fetchServiceVisibleRoles = createAsyncThunk(
   'service/fetchServiceVisibleRoles',
   async (serviceId: string, { rejectWithValue }) => {
     try {
-      const response = await portalApi.get<ApiResponse<string[]>>(`/services/${serviceId}/roles`);
-      return { serviceId, roleIds: response.data.data };
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(
-        axiosError.response?.data?.message || '서비스 가시성 역할 목록을 불러올 수 없습니다.'
-      );
+      const roleIds = await serviceService.getServiceVisibleRoles(serviceId);
+      return { serviceId, roleIds };
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
     }
   }
 );
@@ -359,4 +341,3 @@ const serviceSlice = createSlice({
 
 export const { clearError, setSelectedService, clearServices } = serviceSlice.actions;
 export default serviceSlice.reducer;
-

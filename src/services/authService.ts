@@ -15,11 +15,29 @@ export class AuthService {
   }
 
   /**
+   * 클라이언트 초기화 (RefreshToken으로 AccessToken 및 사용자 정보 반환)
+   * 페이지 로드 시 한 번만 호출하여 인증 상태 복원
+   */
+  static async initialize(): Promise<{ accessToken: string; user: User; isLogin: boolean }> {
+    const response = await authApi.post<{ accessToken: string; user: User }>(
+      "/auth/initialize"
+    );
+
+    const { accessToken, user } = response.data;
+    const { isLogin } = response;
+
+    // AccessToken을 TokenManager에 저장
+    tokenManager.setAccessToken(accessToken);
+
+    return { accessToken, user, isLogin };
+  }
+
+  /**
    * 현재 사용자 정보 조회
    */
   static async getCurrentUser(): Promise<User> {
-    const response = await authApi.get<ApiResponse<User>>("/users/me");
-    return response.data.data;
+    const response = await authApi.get<User>("/users/me");
+    return response.data;
   }
 
   /**

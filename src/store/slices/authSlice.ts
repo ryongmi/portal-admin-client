@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { authApi, tokenManager } from '@/lib/httpClient';
+import { AuthService } from '@/services/authService';
 import type { User } from '@/types';
-import type { ApiResponse } from '@/lib/httpClient';
 
 interface AuthState {
   user: User | null;
@@ -24,12 +23,10 @@ export const logoutUser = createAsyncThunk(
   'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
-      await authApi.post('/auth/logout');
-      tokenManager.clearAccessToken();
+      await AuthService.logout();
       return null;
     } catch (error: unknown) {
       const axiosError = error as { response?: { data?: { message?: string } } };
-      tokenManager.clearAccessToken();
       return rejectWithValue(axiosError.response?.data?.message || '로그아웃에 실패했습니다.');
     }
   }
@@ -40,8 +37,7 @@ export const fetchUserProfile = createAsyncThunk(
   'auth/fetchUserProfile',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await authApi.get<ApiResponse<User>>('/users/me');
-      return response.data.data;
+      return await AuthService.getCurrentUser();
     } catch (error: unknown) {
       const axiosError = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(axiosError.response?.data?.message || '사용자 정보를 불러올 수 없습니다.');
@@ -49,22 +45,16 @@ export const fetchUserProfile = createAsyncThunk(
   }
 );
 
-// 앱 초기화 비동기 액션 (토큰 확인 및 사용자 정보 조회)
+// 앱 초기화 비동기 액션 (RefreshToken으로 AccessToken + 사용자 정보 한번에 조회)
 export const initializeAuth = createAsyncThunk(
   'auth/initialize',
-  async (_, { dispatch, rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const token = tokenManager.getAccessToken();
-      
-      if (token && tokenManager.isValidToken(token)) {
-        // 유효한 토큰이 있으면 사용자 정보 조회
-        const userResponse = await dispatch(fetchUserProfile()).unwrap();
-        return { user: userResponse };
-      } else {
-        // 토큰이 없거나 유효하지 않으면 미인증 상태
-        return { user: null };
-      }
+      // /auth/initialize API 호출 (RefreshToken으로 AccessToken + 사용자 정보 반환)
+      const { accessToken, user, isLogin } = await AuthService.initialize();
+      return { accessToken, user, isLogin };
     } catch (error: unknown) {
+      // 인증 실패 (RefreshToken이 없거나 만료됨)
       const axiosError = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(axiosError.response?.data?.message || '초기화에 실패했습니다.');
     }
@@ -115,8 +105,9 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isInitialized = true;
         state.error = null;
-        
-        if (action.payload.user) {
+
+        // isLogin 플래그를 우선 기준으로 인증 상태 판단
+        if (action.payload.isLogin && action.payload.user) {
           state.user = action.payload.user;
           state.isAuthenticated = true;
         } else {
