@@ -13,6 +13,7 @@ import type { PaginatedResultBase } from '@krgeobuk/core/interfaces';
 interface RoleState {
   roles: RoleSearchResult[];
   selectedRole: RoleDetail | null;
+  currentUserRoles: string[];
   isLoading: boolean;
   error: string | null;
   pagination: PaginatedResultBase;
@@ -21,6 +22,7 @@ interface RoleState {
 const initialState: RoleState = {
   roles: [],
   selectedRole: null,
+  currentUserRoles: [],
   isLoading: false,
   error: null,
   pagination: {
@@ -132,27 +134,12 @@ export const removeRoleFromUser = createAsyncThunk(
   }
 );
 
-// 사용자에게 다중 역할 할당 비동기 액션
-export const assignMultipleRolesToUser = createAsyncThunk(
-  'role/assignMultipleRolesToUser',
-  async ({ userId, roleIds }: { userId: string; roleIds: string[] }, { rejectWithValue }) => {
+// 사용자의 역할 ID 목록 조회 비동기 액션
+export const fetchUserRoles = createAsyncThunk(
+  'role/fetchUserRoles',
+  async (userId: string, { rejectWithValue }) => {
     try {
-      await roleService.assignMultipleRolesToUser(userId, roleIds);
-      return { userId, roleIds };
-    } catch (error) {
-      const serviceError = error as ServiceError;
-      return rejectWithValue(serviceError.message);
-    }
-  }
-);
-
-// 사용자의 역할 완전 교체 비동기 액션
-export const replaceUserRoles = createAsyncThunk(
-  'role/replaceUserRoles',
-  async ({ userId, roleIds }: { userId: string; roleIds: string[] }, { rejectWithValue }) => {
-    try {
-      await roleService.replaceUserRoles(userId, roleIds);
-      return { userId, roleIds };
+      return await roleService.getUserRoles(userId);
     } catch (error) {
       const serviceError = error as ServiceError;
       return rejectWithValue(serviceError.message);
@@ -286,27 +273,17 @@ const roleSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      .addCase(assignMultipleRolesToUser.pending, (state) => {
+      // 사용자 역할 목록 조회
+      .addCase(fetchUserRoles.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(assignMultipleRolesToUser.fulfilled, (state) => {
+      .addCase(fetchUserRoles.fulfilled, (state, action) => {
         state.isLoading = false;
+        state.currentUserRoles = action.payload;
         state.error = null;
       })
-      .addCase(assignMultipleRolesToUser.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      })
-      .addCase(replaceUserRoles.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(replaceUserRoles.fulfilled, (state) => {
-        state.isLoading = false;
-        state.error = null;
-      })
-      .addCase(replaceUserRoles.rejected, (state, action) => {
+      .addCase(fetchUserRoles.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });

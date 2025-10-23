@@ -55,61 +55,6 @@ export const fetchUserById = createAsyncThunk(
   }
 );
 
-// 내 프로필 수정 비동기 액션
-export const updateMyProfile = createAsyncThunk(
-  'user/updateMyProfile',
-  async (profileData: UpdateMyProfileRequest, { rejectWithValue }) => {
-    try {
-      await userService.updateMyProfile(profileData);
-      return profileData;
-    } catch (error) {
-      const serviceError = error as ServiceError;
-      return rejectWithValue(serviceError.message);
-    }
-  }
-);
-
-// 비밀번호 변경 비동기 액션
-export const changePassword = createAsyncThunk(
-  'user/changePassword',
-  async (passwordData: ChangePasswordRequest, { rejectWithValue }) => {
-    try {
-      await userService.changePassword(passwordData);
-      return null;
-    } catch (error) {
-      const serviceError = error as ServiceError;
-      return rejectWithValue(serviceError.message);
-    }
-  }
-);
-
-// 계정 삭제 비동기 액션
-export const deleteMyAccount = createAsyncThunk(
-  'user/deleteMyAccount',
-  async (_, { rejectWithValue }) => {
-    try {
-      await userService.deleteMyAccount();
-      return null;
-    } catch (error) {
-      const serviceError = error as ServiceError;
-      return rejectWithValue(serviceError.message);
-    }
-  }
-);
-
-// 관리자 기능: 사용자 생성
-export const createUser = createAsyncThunk(
-  'user/createUser',
-  async (userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>, { rejectWithValue }) => {
-    try {
-      return await userService.createUser(userData);
-    } catch (error) {
-      const serviceError = error as ServiceError;
-      return rejectWithValue(serviceError.message);
-    }
-  }
-);
-
 // 관리자 기능: 사용자 수정
 export const updateUser = createAsyncThunk(
   'user/updateUser',
@@ -180,63 +125,6 @@ const userSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchUserById.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      })
-      // 내 프로필 수정
-      .addCase(updateMyProfile.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(updateMyProfile.fulfilled, (state, action) => {
-        state.isLoading = false;
-        if (state.currentUser) {
-          state.currentUser = { ...state.currentUser, ...action.payload };
-        }
-        state.error = null;
-      })
-      .addCase(updateMyProfile.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      })
-      // 비밀번호 변경
-      .addCase(changePassword.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(changePassword.fulfilled, (state) => {
-        state.isLoading = false;
-        state.error = null;
-      })
-      .addCase(changePassword.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      })
-      // 계정 삭제
-      .addCase(deleteMyAccount.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(deleteMyAccount.fulfilled, (state) => {
-        state.isLoading = false;
-        state.currentUser = null;
-        state.error = null;
-      })
-      .addCase(deleteMyAccount.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      })
-      // 관리자 기능: 사용자 생성
-      .addCase(createUser.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(createUser.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.users.push(action.payload as unknown as UserSearchResult);
-        state.error = null;
-      })
-      .addCase(createUser.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       })

@@ -16,6 +16,7 @@ import type { PaginatedResultBase } from '@krgeobuk/core/interfaces';
 interface PermissionState {
   permissions: PermissionSearchResult[];
   selectedPermission: PermissionDetail | null;
+  currentRolePermissions: string[];
   isLoading: boolean;
   error: string | null;
   pagination: PaginatedResultBase;
@@ -24,6 +25,7 @@ interface PermissionState {
 const initialState: PermissionState = {
   permissions: [],
   selectedPermission: null,
+  currentRolePermissions: [],
   isLoading: false,
   error: null,
   pagination: {
@@ -197,6 +199,19 @@ export const fetchUserPermissions = createAsyncThunk(
   async (userId: string, { rejectWithValue }) => {
     try {
       return await permissionService.getUserPermissions(userId);
+    } catch (error) {
+      const serviceError = error as ServiceError;
+      return rejectWithValue(serviceError.message);
+    }
+  }
+);
+
+// 역할의 권한 ID 목록 조회 비동기 액션
+export const fetchRolePermissions = createAsyncThunk(
+  'permission/fetchRolePermissions',
+  async (roleId: string, { rejectWithValue }) => {
+    try {
+      return await permissionService.getRolePermissions(roleId);
     } catch (error) {
       const serviceError = error as ServiceError;
       return rejectWithValue(serviceError.message);
@@ -381,6 +396,20 @@ const permissionSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchUserPermissions.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // 역할 권한 목록 조회
+      .addCase(fetchRolePermissions.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchRolePermissions.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.currentRolePermissions = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchRolePermissions.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });

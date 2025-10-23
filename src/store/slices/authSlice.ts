@@ -1,9 +1,11 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { AuthService } from '@/services/authService';
-import type { User } from '@/types';
+import type { UserProfile } from '@krgeobuk/user/interfaces';
+
+// import type { User } from '@/types';
 
 interface AuthState {
-  user: User | null;
+  user: UserProfile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -19,18 +21,15 @@ const initialState: AuthState = {
 };
 
 // 로그아웃 비동기 액션
-export const logoutUser = createAsyncThunk(
-  'auth/logout',
-  async (_, { rejectWithValue }) => {
-    try {
-      await AuthService.logout();
-      return null;
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(axiosError.response?.data?.message || '로그아웃에 실패했습니다.');
-    }
+export const logoutUser = createAsyncThunk('auth/logout', async (_, { rejectWithValue }) => {
+  try {
+    await AuthService.logout();
+    return null;
+  } catch (error: unknown) {
+    const axiosError = error as { response?: { data?: { message?: string } } };
+    return rejectWithValue(axiosError.response?.data?.message || '로그아웃에 실패했습니다.');
   }
-);
+});
 
 // 사용자 정보 조회 비동기 액션
 export const fetchUserProfile = createAsyncThunk(
@@ -40,7 +39,9 @@ export const fetchUserProfile = createAsyncThunk(
       return await AuthService.getCurrentUser();
     } catch (error: unknown) {
       const axiosError = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(axiosError.response?.data?.message || '사용자 정보를 불러올 수 없습니다.');
+      return rejectWithValue(
+        axiosError.response?.data?.message || '사용자 정보를 불러올 수 없습니다.'
+      );
     }
   }
 );
@@ -66,7 +67,7 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     // 사용자 정보 설정
-    setUser: (state, action: PayloadAction<User>) => {
+    setUser: (state, action: PayloadAction<UserProfile>) => {
       state.user = action.payload;
       state.isAuthenticated = true;
       state.error = null;
@@ -161,12 +162,6 @@ const authSlice = createSlice({
   },
 });
 
-export const {
-  setUser,
-  clearUser,
-  setLoading,
-  setError,
-  clearError,
-} = authSlice.actions;
+export const { setUser, clearUser, setLoading, setError, clearError } = authSlice.actions;
 
 export default authSlice.reducer;

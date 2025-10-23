@@ -8,13 +8,16 @@ import {
   fetchUserById,
   setSelectedUser,
   clearError,
-  createUser,
   updateUser,
   deleteUser,
 } from '@/store/slices/userSlice';
-import { fetchRoles } from '@/store/slices/roleSlice';
+import {
+  fetchRoles,
+  assignRoleToUser,
+  removeRoleFromUser,
+  fetchUserRoles
+} from '@/store/slices/roleSlice';
 import { fetchServices } from '@/store/slices/serviceSlice';
-import { roleService } from '@/services/roleService';
 import Layout from '@/components/layout/Layout';
 import AdminAuthGuard from '@/components/auth/AdminAuthGuard';
 import Table from '@/components/common/Table';
@@ -144,8 +147,8 @@ export default function ReduxUsersPage(): JSX.Element {
       setCurrentUserId(userSearchResult.id);
       // 상세 데이터 API 호출
       await dispatch(fetchUserById(userSearchResult.id)).unwrap();
-      // 사용자의 현재 역할 목록 조회
-      const userRolesResponse = await roleService.getUserRoles(userSearchResult.id);
+      // 사용자의 현재 역할 목록 조회 (Redux dispatch 사용)
+      const userRolesResponse = await dispatch(fetchUserRoles(userSearchResult.id)).unwrap();
       setUserRoles(userRolesResponse);
       setIsRoleModalOpen(true);
     } catch (error) {
@@ -162,10 +165,11 @@ export default function ReduxUsersPage(): JSX.Element {
 
   const handleAssignRole = withLoading('assignRole', async (userId: string, roleId: string) => {
     try {
-      await roleService.assignUserRole(userId, roleId);
+      // Redux dispatch 사용하여 역할 할당
+      await dispatch(assignRoleToUser({ userId, roleId })).unwrap();
       toast.success('역할 할당 완료', '사용자에게 역할이 성공적으로 할당되었습니다.');
-      // 사용자 역할 목록 새로고침
-      const userRolesResponse = await roleService.getUserRoles(userId);
+      // 사용자 역할 목록 새로고침 (Redux dispatch 사용)
+      const userRolesResponse = await dispatch(fetchUserRoles(userId)).unwrap();
       setUserRoles(userRolesResponse);
       // 사용자 목록 새로고침
       dispatch(fetchUsers(searchQuery));
@@ -176,10 +180,11 @@ export default function ReduxUsersPage(): JSX.Element {
 
   const handleRemoveRole = withLoading('removeRole', async (userId: string, roleId: string) => {
     try {
-      await roleService.revokeUserRole(userId, roleId);
+      // Redux dispatch 사용하여 역할 제거
+      await dispatch(removeRoleFromUser({ userId, roleId })).unwrap();
       toast.success('역할 제거 완료', '사용자에서 역할이 성공적으로 제거되었습니다.');
-      // 사용자 역할 목록 새로고침
-      const userRolesResponse = await roleService.getUserRoles(userId);
+      // 사용자 역할 목록 새로고침 (Redux dispatch 사용)
+      const userRolesResponse = await dispatch(fetchUserRoles(userId)).unwrap();
       setUserRoles(userRolesResponse);
       // 사용자 목록 새로고침
       dispatch(fetchUsers(searchQuery));
@@ -211,19 +216,9 @@ export default function ReduxUsersPage(): JSX.Element {
 
           toast.success('사용자 수정 완료', '사용자 정보가 성공적으로 수정되었습니다.');
         } else {
-          // 생성
-          await dispatch(
-            createUser({
-              email: data.email,
-              name: data.name,
-              nickname: data.nickname,
-              password: data.password,
-              isEmailVerified: false,
-              isIntegrated: false,
-            })
-          ).unwrap();
-
-          toast.success('사용자 생성 완료', '새 사용자가 성공적으로 생성되었습니다.');
+          // 사용자 생성 기능은 제거되었습니다
+          toast.error('기능 제한', '사용자 생성 기능은 현재 지원되지 않습니다.');
+          return;
         }
 
         handleCloseModal();

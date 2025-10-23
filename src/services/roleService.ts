@@ -128,57 +128,11 @@ export class RoleService extends BaseService {
   }
 
   /**
-   * 사용자에게 다중 역할 할당
-   */
-  async assignMultipleRolesToUser(userId: string, roleIds: string[]): Promise<void> {
-    try {
-      await authzApi.post<void>(`/users/${userId}/roles/batch`, { roleIds });
-    } catch (error) {
-      this.handleError(error);
-    }
-  }
-
-  /**
-   * 사용자의 역할 완전 교체
-   */
-  async replaceUserRoles(userId: string, roleIds: string[]): Promise<void> {
-    try {
-      await authzApi.put<void>(`/users/${userId}/roles`, { roleIds });
-    } catch (error) {
-      this.handleError(error);
-    }
-  }
-
-  /**
    * 사용자의 역할 ID 목록 조회
    */
   async getUserRoles(userId: string): Promise<string[]> {
     try {
       const response = await authzApi.get<string[]>(`/users/${userId}/roles`);
-      return response.data;
-    } catch (error) {
-      this.handleError(error);
-    }
-  }
-
-  /**
-   * 사용자에게 역할 할당
-   */
-  async assignUserRole(userId: string, roleId: string): Promise<null> {
-    try {
-      const response = await authzApi.post<null>(`/users/${userId}/roles/${roleId}`);
-      return response.data;
-    } catch (error) {
-      this.handleError(error);
-    }
-  }
-
-  /**
-   * 사용자 역할 해제
-   */
-  async revokeUserRole(userId: string, roleId: string): Promise<null> {
-    try {
-      const response = await authzApi.delete<null>(`/users/${userId}/roles/${roleId}`);
       return response.data;
     } catch (error) {
       this.handleError(error);

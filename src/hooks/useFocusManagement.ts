@@ -60,35 +60,6 @@ export const useFocusManagement = (isOpen: boolean): { containerRef: React.RefOb
   return { containerRef };
 };
 
-export const useFocusTrap = (isActive: boolean, containerRef: React.RefObject<HTMLElement>): void => {
-  useEffect(() => {
-    if (!isActive || !containerRef.current) return;
-
-    const container = containerRef.current;
-    const focusableElements = container.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-
-    const firstElement = focusableElements[0] as HTMLElement;
-    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
-
-    const handleKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Tab') {
-        if (event.shiftKey && document.activeElement === firstElement) {
-          event.preventDefault();
-          lastElement.focus();
-        } else if (!event.shiftKey && document.activeElement === lastElement) {
-          event.preventDefault();
-          firstElement.focus();
-        }
-      }
-    };
-
-    container.addEventListener('keydown', handleKeyDown);
-    return (): void => container.removeEventListener('keydown', handleKeyDown);
-  }, [isActive, containerRef]);
-};
-
 export const useSkipLink = (): { skipLinkRef: React.RefObject<HTMLAnchorElement>; handleSkipToContent: (event: React.KeyboardEvent) => void } => {
   const skipLinkRef = useRef<HTMLAnchorElement>(null);
 

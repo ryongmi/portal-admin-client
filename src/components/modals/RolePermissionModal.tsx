@@ -5,8 +5,9 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   fetchPermissions,
   clearError,
+  fetchRolePermissions,
+  replaceRolePermissions,
 } from '@/store/slices/permissionSlice';
-// assignPermissionToRole, removePermissionFromRole, replaceRolePermissions available if needed
 import Modal from '@/components/common/Modal';
 import Button from '@/components/common/Button';
 import LoadingButton from '@/components/common/LoadingButton';
@@ -15,7 +16,6 @@ import { toast } from '@/components/common/ToastContainer';
 import { useLoadingState } from '@/hooks/useLoadingState';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
 import type { RoleDetail, PermissionSearchResult, PermissionDetail } from '@/types';
-import { permissionService } from '@/services/permissionService';
 
 // PermissionSearchResult를 PermissionDetail로 안전하게 변환하는 함수
 const _convertToPermissionDetail = (permission: PermissionSearchResult): PermissionDetail => ({
@@ -82,14 +82,14 @@ const RolePermissionModal = memo<RolePermissionModalProps>(function RolePermissi
   // 역할의 현재 권한 로드
   const loadRolePermissions = async (roleId: string): Promise<void> => {
     try {
-      const response = await permissionService.getRolePermissions(roleId);
-      const permissionIds = response || [];
-      
+      // Redux dispatch 사용하여 권한 목록 조회
+      const permissionIds = await dispatch(fetchRolePermissions(roleId)).unwrap();
+
       // 권한 ID 목록을 기반으로 실제 권한 정보 매핑 및 타입 변환
       const rolePermissions = permissions
         .filter(p => permissionIds.includes(p.id!))
         .map(_convertToPermissionDetail);
-      
+
       setCurrentRolePermissions(rolePermissions);
       setSelectedPermissions(new Set(permissionIds));
     } catch (error) {
@@ -177,7 +177,11 @@ const RolePermissionModal = memo<RolePermissionModalProps>(function RolePermissi
 
     try {
       const newPermissionIds = Array.from(selectedPermissions);
-      await permissionService.replaceRolePermissions(role.id!, newPermissionIds);
+      // Redux dispatch 사용하여 권한 교체
+      await dispatch(replaceRolePermissions({
+        roleId: role.id!,
+        permissionIds: newPermissionIds
+      })).unwrap();
 
       toast.success('권한 업데이트 완료', `${role.name} 역할의 권한이 성공적으로 업데이트되었습니다.`);
       onClose();

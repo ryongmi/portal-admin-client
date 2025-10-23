@@ -991,4 +991,242 @@ import type { CreatePermissionDto } from '@krgeobuk/permission/dtos';
 
 ---
 
+## Hooks 사용 패턴 (Portal-Client 패턴)
+
+> **중요**: portal-admin-client는 portal-client와 동일한 Hooks 패턴을 따릅니다.
+
+### 핵심 원칙: Hooks → Slice → Service
+
+portal-admin-client의 모든 데이터 흐름은 다음 패턴을 따릅니다:
+
+```
+Component → Custom Hook → Redux Slice → Service → HTTP Client → API
+```
+
+### 1. 인증 Hook 패턴
+
+**파일**: `src/hooks/useAuth.ts`
+
+```typescript
+/**
+ * useAuth - Redux 기반 인증 상태 관리
+ *
+ * 특징:
+ * - Redux authSlice를 래핑
+ * - initializeAuth() 자동 실행
+ * - 서비스 직접 호출 없음
+ */
+const { user, isAuthenticated, isLoading } = useAuth();
+
+// Hook 내부에서 자동으로 initializeAuth() dispatch
+useEffect(() => {
+  if (!isInitialized) {
+    dispatch(initializeAuth());
+  }
+}, [isInitialized]);
+```
+
+### 2. 사용자 프로필 Hook 패턴
+
+**파일**: `src/hooks/useUserProfile.ts`
+
+```typescript
+/**
+ * useUserProfile - Redux 기반 사용자 프로필 관리
+ *
+ * 특징:
+ * - Redux authSlice의 user 상태 조회
+ * - refetch는 Redux dispatch로 구현
+ * - 권한 검증 유틸리티 제공
+ */
+const { userProfile, loading, availableServices, roles, permissions, refetch } = useUserProfile();
+
+// 권한 검증 Hooks
+const hasPermission = usePermission('admin.view');
+const hasRole = useRole('admin');
+const hasAllPermissions = usePermissions(['admin.view', 'admin.edit']);
+const hasAnyRole = useAnyRole(['admin', 'manager']);
+```
+
+### 3. CRUD 페이지 패턴 (Redux Direct)
+
+**사용자 관리 페이지 예시:**
+
+```typescript
+// src/app/users/page.tsx
+export default function UsersPage() {
+  const dispatch = useAppDispatch();
+  const { users, isLoading, error, pagination } = useAppSelector(state => state.user);
+
+  // 초기 데이터 로드
+  useEffect(() => {
+    dispatch(fetchUsers({}));
+  }, [dispatch]);
+
+  // 검색 처리
+  const handleSearch = (query: UserSearchQuery) => {
+    dispatch(fetchUsers(query));
+  };
+
+  // 생성 처리
+  const handleCreate = async (userData: CreateUserDto) => {
+    try {
+      await dispatch(createUser(userData)).unwrap();
+      dispatch(fetchUsers({})); // 목록 새로고침
+    } catch (error) {
+      // 에러 처리
+    }
+  };
+
+  return (
+    <div>
+      <SearchBar onSearch={handleSearch} />
+      <UserTable users={users} loading={isLoading} />
+      <CreateUserModal onSubmit={handleCreate} />
+    </div>
+  );
+}
+```
+
+### 4. 미사용 Hooks (@deprecated)
+
+다음 Hooks는 Redux Slice로 대체되어 **사용하지 않습니다**:
+
+- `useUsers.ts` → `userSlice` 사용
+- `useRoles.ts` → `roleSlice` 사용
+- `usePermissions.ts` → `permissionSlice` 사용
+- `usePagination.ts` → Redux pagination state 사용
+
+향후 제거 예정이며, 파일 상단에 `@deprecated` 태그가 표시되어 있습니다.
+
+### 5. 공통 컴포넌트 활용
+
+useLoadingState와 useErrorHandler Hook 대신 공통 컴포넌트를 사용합니다:
+
+```typescript
+// ❌ 이전 방식 (useLoadingState Hook)
+const { isLoading, withLoading } = useLoadingState();
+const handleSubmit = withLoading('save', async () => {
+  await api.save();
+});
+
+// ✅ 새로운 방식 (LoadingButton Component)
+import { LoadingButton } from '@/components/common/LoadingButton';
+
+const [isLoading, setIsLoading] = useState(false);
+
+<LoadingButton isLoading={isLoading} onClick={handleSubmit}>
+  저장
+</LoadingButton>
+```
+
+```typescript
+// ❌ 이전 방식 (useErrorHandler Hook)
+const { handleApiError } = useErrorHandler();
+
+// ✅ 새로운 방식 (ErrorMessage Component)
+import { ApiErrorMessage } from '@/components/common/ErrorMessage';
+
+{error && (
+  <ApiErrorMessage
+    error={error}
+    onRetry={handleRetry}
+    onDismiss={() => setError(null)}
+  />
+)}
+```
+
+### 6. AuthContext 통합
+
+**파일**: `src/context/AuthContext.tsx`
+
+AuthContext는 Redux와 통합되어 있습니다:
+
+```typescript
+export function AuthProvider({ children }) {
+  const dispatch = useAppDispatch();
+  const { user, isAuthenticated, isLoading, error, isInitialized } =
+    useAppSelector(state => state.auth);
+
+  // 초기화 (RefreshToken 기반)
+  useEffect(() => {
+    if (!isInitialized) {
+      dispatch(initializeAuth());
+    }
+  }, [isInitialized]);
+
+  // 로그아웃
+  const logout = async () => {
+    try {
+      await dispatch(logoutUser()).unwrap();
+    } catch {
+      dispatch(clearUser());
+      tokenManager.clearAccessToken();
+    }
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, isLoggedIn, logout, refreshUser }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+```
+
+### 7. 데이터 흐름 비교
+
+#### Portal-Admin-Client (현재)
+```
+Component
+  ↓
+useAppDispatch + useAppSelector (Redux)
+  ↓
+Redux Slice (createAsyncThunk)
+  ↓
+Service (싱글톤)
+  ↓
+HTTP Client (@krgeobuk/http-client)
+  ↓
+API Server
+```
+
+#### Portal-Client (동일 패턴)
+```
+Component
+  ↓
+useAuth / useUserProfile Hook (Redux Wrapper)
+  ↓
+Redux Slice
+  ↓
+Service
+  ↓
+HTTP Client
+  ↓
+API Server
+```
+
+### 8. 페이지별 패턴 가이드
+
+| 페이지 유형 | 추천 패턴 | 예시 |
+|----------|---------|------|
+| **인증 상태 확인** | useAuth Hook | `const { isAuthenticated } = useAuth();` |
+| **사용자 프로필** | useUserProfile Hook | `const { userProfile, roles } = useUserProfile();` |
+| **권한 검증** | usePermission Hook | `if (usePermission('admin.view')) { ... }` |
+| **CRUD 관리** | Redux Direct | `dispatch(fetchUsers({}))` |
+| **대시보드** | 특화 Hook | `const { statistics } = useDashboard();` |
+
+### 9. 마이그레이션 체크리스트
+
+기존 코드를 새 패턴으로 마이그레이션할 때:
+
+- [ ] useAuth는 Redux authSlice 래핑 확인
+- [ ] useUserProfile은 Redux authSlice 래핑 확인
+- [ ] useUsers/useRoles/usePermissions Hook 사용 제거
+- [ ] Redux dispatch를 직접 사용
+- [ ] useLoadingState → LoadingButton 컴포넌트로 교체
+- [ ] useErrorHandler → ErrorMessage 컴포넌트로 교체
+- [ ] AuthContext가 Redux 기반인지 확인
+
+---
+
 Portal Admin Client는 krgeobuk 생태계의 중앙 관리 허브로서, 높은 보안성과 사용성을 모두 만족하는 관리자 포탈을 지향합니다.
