@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import '@/styles/accessibility.css'
 import { Providers } from '@/components/providers/Providers'
+import AdminAuthGuard from '@/components/auth/AdminAuthGuard'
 
 export const metadata: Metadata = {
   title: 'KRGeobuk Portal Admin',
@@ -17,7 +18,9 @@ export default function RootLayout({
     <html lang="ko">
       <body>
         <Providers>
-          {children}
+          <AdminAuthGuard>
+            {children}
+          </AdminAuthGuard>
         </Providers>
       </body>
     </html>

@@ -12,7 +12,6 @@ import {
   clearError,
 } from '@/store/slices/serviceSlice';
 import Layout from '@/components/layout/Layout';
-import AdminAuthGuard from '@/components/auth/AdminAuthGuard';
 import Table from '@/components/common/Table';
 import Button from '@/components/common/Button';
 import Pagination from '@/components/common/Pagination';
@@ -271,7 +270,7 @@ export default function ReduxServicesPage(): JSX.Element {
   ];
 
   return (
-    <AdminAuthGuard>
+    
       <Layout>
         <div className="space-y-6">
           {/* 헤더 */}
@@ -428,6 +427,6 @@ export default function ReduxServicesPage(): JSX.Element {
           />
         </div>
       </Layout>
-    </AdminAuthGuard>
+    
   );
 }

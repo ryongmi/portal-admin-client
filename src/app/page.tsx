@@ -4,7 +4,6 @@ import React from 'react';
 import { Users, Shield, Key, UserCheck, UserX, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Layout from '@/components/layout/Layout';
-import AdminAuthGuard from '@/components/auth/AdminAuthGuard';
 import { useDashboard } from '@/hooks/useDashboard';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { SystemHealthCard } from '@/components/dashboard/SystemHealthCard';
@@ -21,41 +20,34 @@ export default function AdminDashboardPage(): JSX.Element {
 
   if (loading && !statistics) {
     return (
-      <AdminAuthGuard>
-        <Layout>
-          <div className="flex items-center justify-center h-64">
-            <LoadingSpinner size="lg" />
-          </div>
-        </Layout>
-      </AdminAuthGuard>
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner size="lg" />
+        </div>
+      </Layout>
     );
   }
 
   if (error) {
     return (
-      <AdminAuthGuard>
-        <Layout>
-          <ErrorMessage message={error} onRetry={fetchStatistics} />
-        </Layout>
-      </AdminAuthGuard>
+      <Layout>
+        <ErrorMessage message={error} onRetry={fetchStatistics} />
+      </Layout>
     );
   }
 
   if (!statistics) {
     return (
-      <AdminAuthGuard>
-        <Layout>
-          <div className="text-center py-12">
-            <p className="text-gray-500">통계 데이터를 불러올 수 없습니다.</p>
-          </div>
-        </Layout>
-      </AdminAuthGuard>
+      <Layout>
+        <div className="text-center py-12">
+          <p className="text-gray-500">통계 데이터를 불러올 수 없습니다.</p>
+        </div>
+      </Layout>
     );
   }
 
   return (
-    <AdminAuthGuard>
-      <Layout>
+    <Layout>
         <div className="space-y-6">
           {/* 헤더 */}
           <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/30 p-6">
@@ -273,7 +265,6 @@ export default function AdminDashboardPage(): JSX.Element {
           </div>
         </div>
       </Layout>
-    </AdminAuthGuard>
   );
 }
 
