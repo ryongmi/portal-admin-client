@@ -24,6 +24,7 @@ import FormField, { Input, Textarea, Checkbox } from '@/components/common/FormFi
 import { ApiErrorMessage } from '@/components/common/ErrorMessage';
 import { useLoadingState } from '@/hooks/useLoadingState';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
+import { useDebounce } from '@/hooks/useDebounce';
 import { mapServerErrorsToFormErrors } from '@/utils/formValidation';
 import { toast } from '@/components/common/ToastContainer';
 import type {
@@ -55,6 +56,12 @@ export default function ReduxServicesPage(): JSX.Element {
   const [searchQuery, setSearchQuery] = useState<ServiceSearchQuery>({});
   const [formError, setFormError] = useState<string | null>(null);
 
+  // 디바운싱을 위한 로컬 입력 상태
+  const [nameInput, setNameInput] = useState('');
+
+  // 디바운싱된 값 (500ms 지연)
+  const debouncedName = useDebounce(nameInput, 500);
+
   // 로딩 상태 관리
   const { isLoading: isActionsLoading, withLoading } = useLoadingState();
 
@@ -70,19 +77,19 @@ export default function ReduxServicesPage(): JSX.Element {
     setError,
   } = useForm<{
     name: string;
-    description: string;
-    baseUrl: string;
-    displayName: string;
-    iconUrl: string;
+    description: string | null;
+    baseUrl: string | null;
+    displayName: string | null;
+    iconUrl: string | null;
     isVisible: boolean;
     isVisibleByRole: boolean;
   }>({
     defaultValues: {
       name: '',
-      description: '',
-      baseUrl: '',
-      displayName: '',
-      iconUrl: '',
+      description: null,
+      baseUrl: null,
+      displayName: null,
+      iconUrl: null,
       isVisible: true,
       isVisibleByRole: false,
     },
@@ -101,6 +108,17 @@ export default function ReduxServicesPage(): JSX.Element {
       setTimeout(() => dispatch(clearError()), 5000);
     }
   }, [error, dispatch]);
+
+  // 디바운싱된 name 값이 변경되면 검색 실행
+  useEffect(() => {
+    const trimmedValue = debouncedName.trim();
+    const newQuery = {
+      ...searchQuery,
+      name: trimmedValue === '' ? undefined : trimmedValue,
+    };
+    setSearchQuery(newQuery);
+    dispatch(fetchServices(newQuery));
+  }, [debouncedName, dispatch]);
 
   // 검색 처리
   const handleSearch = (query: ServiceSearchQuery): void => {
@@ -125,10 +143,10 @@ export default function ReduxServicesPage(): JSX.Element {
         // 전체 데이터로 폼 초기화
         reset({
           name: fullServiceData.name,
-          description: fullServiceData.description || '',
-          baseUrl: fullServiceData.baseUrl || '',
-          displayName: fullServiceData.displayName || '',
-          iconUrl: fullServiceData.iconUrl || '',
+          description: fullServiceData.description || null,
+          baseUrl: fullServiceData.baseUrl || null,
+          displayName: fullServiceData.displayName || null,
+          iconUrl: fullServiceData.iconUrl || null,
           isVisible: fullServiceData.isVisible ?? true,
           isVisibleByRole: fullServiceData.isVisibleByRole ?? false,
         });
@@ -136,10 +154,10 @@ export default function ReduxServicesPage(): JSX.Element {
         dispatch(setSelectedService(null));
         reset({
           name: '',
-          description: '',
-          baseUrl: '',
-          displayName: '',
-          iconUrl: '',
+          description: null,
+          baseUrl: null,
+          displayName: null,
+          iconUrl: null,
           isVisible: true,
           isVisibleByRole: false,
         });
@@ -164,10 +182,10 @@ export default function ReduxServicesPage(): JSX.Element {
     'save',
     async (data: {
       name: string;
-      description: string;
-      baseUrl: string;
-      displayName: string;
-      iconUrl: string;
+      description: string | null;
+      baseUrl: string | null;
+      displayName: string | null;
+      iconUrl: string | null;
       isVisible: boolean;
       isVisibleByRole: boolean;
     }) => {
@@ -177,10 +195,10 @@ export default function ReduxServicesPage(): JSX.Element {
         if (selectedService && selectedService.id) {
           const updateData: UpdateServiceRequest = {
             name: data.name,
-            description: data.description,
-            baseUrl: data.baseUrl,
-            displayName: data.displayName,
-            iconUrl: data.iconUrl,
+            description: data.description || null,
+            baseUrl: data.baseUrl || null,
+            displayName: data.displayName || null,
+            iconUrl: data.iconUrl || null,
             isVisible: data.isVisible,
             isVisibleByRole: data.isVisibleByRole,
           };
@@ -192,10 +210,10 @@ export default function ReduxServicesPage(): JSX.Element {
         } else {
           const createData: CreateServiceRequest = {
             name: data.name,
-            description: data.description,
-            baseUrl: data.baseUrl,
-            displayName: data.displayName,
-            iconUrl: data.iconUrl,
+            description: data.description || null,
+            baseUrl: data.baseUrl || null,
+            displayName: data.displayName || null,
+            iconUrl: data.iconUrl || null,
             isVisible: data.isVisible,
             isVisibleByRole: data.isVisibleByRole,
           };
@@ -417,7 +435,8 @@ export default function ReduxServicesPage(): JSX.Element {
                   type="text"
                   placeholder="서비스명을 입력하세요"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  onChange={(e) => handleSearch({ ...searchQuery, name: e.target.value })}
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
                 />
               </div>
               {/* <div>
@@ -433,12 +452,13 @@ export default function ReduxServicesPage(): JSX.Element {
                 <label className="block text-sm font-medium text-gray-700 mb-1">가시성</label>
                 <select
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const value = e.target.value;
                     handleSearch({
                       ...searchQuery,
-                      isVisible: e.target.value === undefined ? false : e.target.value === 'true',
-                    })
-                  }
+                      isVisible: value === '' ? undefined : value === 'true',
+                    });
+                  }}
                 >
                   <option value="">모든 가시성</option>
                   <option value="true">가시적</option>
@@ -446,7 +466,10 @@ export default function ReduxServicesPage(): JSX.Element {
                 </select>
               </div>
               <div className="flex items-end">
-                <Button onClick={() => handleSearch({})}>검색 초기화</Button>
+                <Button onClick={() => {
+                  setNameInput('');
+                  handleSearch({});
+                }}>검색 초기화</Button>
               </div>
             </div>
           </div>
@@ -515,9 +538,8 @@ export default function ReduxServicesPage(): JSX.Element {
 
               <FormField
                 label="표시명"
-                required
                 {...(errors.displayName?.message && { error: errors.displayName.message })}
-                hint="사용자에게 표시될 이름입니다"
+                hint="사용자에게 표시될 이름입니다 (선택사항)"
                 className="pb-4"
               >
                 <Input
@@ -528,17 +550,15 @@ export default function ReduxServicesPage(): JSX.Element {
                       message: '표시명은 최대 100자까지 입력 가능합니다',
                     },
                   })}
-                  required
                   {...(errors.displayName?.message && { error: errors.displayName.message })}
-                  placeholder="사용자에게 표시될 이름"
+                  placeholder="사용자에게 표시될 이름 (선택사항)"
                 />
               </FormField>
 
               <FormField
                 label="설명"
-                required
                 {...(errors.description?.message && { error: errors.description.message })}
-                hint="서비스에 대한 상세한 설명을 입력하세요"
+                hint="서비스에 대한 상세한 설명을 입력하세요 (선택사항)"
                 className="pb-4"
               >
                 <Textarea
@@ -548,42 +568,37 @@ export default function ReduxServicesPage(): JSX.Element {
                       message: '설명은 최대 500자까지 입력 가능합니다',
                     },
                   })}
-                  required
                   {...(errors.description?.message && { error: errors.description.message })}
                   rows={3}
-                  placeholder="서비스에 대한 설명을 입력하세요"
+                  placeholder="서비스에 대한 설명을 입력하세요 (선택사항)"
                 />
               </FormField>
 
               <FormField
                 label="Base URL"
-                required
                 {...(errors.baseUrl?.message && { error: errors.baseUrl.message })}
-                hint="서비스의 기본 URL입니다"
+                hint="서비스의 기본 URL입니다 (선택사항)"
                 className="pb-4"
               >
                 <Input
                   type="url"
                   {...register('baseUrl', validationRules.url)}
-                  required
                   {...(errors.baseUrl?.message && { error: errors.baseUrl.message })}
-                  placeholder="https://example.com"
+                  placeholder="https://example.com (선택사항)"
                 />
               </FormField>
 
               <FormField
                 label="아이콘 URL"
-                required
                 {...(errors.iconUrl?.message && { error: errors.iconUrl.message })}
-                hint="서비스 아이콘의 URL입니다"
+                hint="서비스 아이콘의 URL입니다 (선택사항)"
                 className="pb-4"
               >
                 <Input
                   type="url"
                   {...register('iconUrl', validationRules.url)}
-                  required
                   {...(errors.iconUrl?.message && { error: errors.iconUrl.message })}
-                  placeholder="https://example.com/icon.png"
+                  placeholder="https://example.com/icon.png (선택사항)"
                 />
               </FormField>
 

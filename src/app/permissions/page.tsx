@@ -26,6 +26,7 @@ import FormField, { Input, Textarea, Select } from '@/components/common/FormFiel
 import { ApiErrorMessage } from '@/components/common/ErrorMessage';
 import { useLoadingState } from '@/hooks/useLoadingState';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
+import { useDebounce } from '@/hooks/useDebounce';
 import { mapServerErrorsToFormErrors } from '@/utils/formValidation';
 import { toast } from '@/components/common/ToastContainer';
 import type {
@@ -55,6 +56,12 @@ export default function ReduxPermissionsPage(): JSX.Element {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState<PermissionSearchQuery>({});
   const [formError, setFormError] = useState<string | null>(null);
+
+  // 디바운싱을 위한 로컬 입력 상태
+  const [actionInput, setActionInput] = useState('');
+
+  // 디바운싱된 값 (500ms 지연)
+  const debouncedAction = useDebounce(actionInput, 500);
 
   // 로딩 상태 관리
   const { isLoading: isActionsLoading, withLoading } = useLoadingState();
@@ -91,6 +98,17 @@ export default function ReduxPermissionsPage(): JSX.Element {
       setTimeout(() => dispatch(clearError()), 5000);
     }
   }, [error, dispatch]);
+
+  // 디바운싱된 action 값이 변경되면 검색 실행
+  useEffect(() => {
+    const trimmedValue = debouncedAction.trim();
+    const newQuery = {
+      ...searchQuery,
+      action: trimmedValue === '' ? undefined : trimmedValue,
+    };
+    setSearchQuery(newQuery);
+    dispatch(fetchPermissions(newQuery));
+  }, [debouncedAction, dispatch]);
 
   // 검색 처리
   const handleSearch = (query: PermissionSearchQuery): void => {
@@ -383,14 +401,21 @@ export default function ReduxPermissionsPage(): JSX.Element {
                   type="text"
                   placeholder="액션을 입력하세요 (예: user.read)"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                  onChange={(e) => handleSearch({ ...searchQuery, action: e.target.value })}
+                  value={actionInput}
+                  onChange={(e) => setActionInput(e.target.value)}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">서비스</label>
                 <select
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                  onChange={(e) => handleSearch({ ...searchQuery, serviceId: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    handleSearch({
+                      ...searchQuery,
+                      serviceId: value === '' ? undefined : value,
+                    });
+                  }}
                 >
                   <option value="">모든 서비스</option>
                   {services.map((service) => (
@@ -401,7 +426,10 @@ export default function ReduxPermissionsPage(): JSX.Element {
                 </select>
               </div>
               <div className="flex items-end">
-                <Button onClick={() => handleSearch({})}>검색 초기화</Button>
+                <Button onClick={() => {
+                  setActionInput('');
+                  handleSearch({});
+                }}>검색 초기화</Button>
               </div>
             </div>
           </div>
