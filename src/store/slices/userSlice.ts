@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { userService } from '@/services/userService';
 import type { ServiceError } from '@/services/base';
-import type { User, UserSearchResult, UserDetail, UserSearchQuery, UpdateMyProfileRequest, ChangePasswordRequest } from '@/types';
+import type { User, UserSearchResult, UserDetail, UserSearchQuery } from '@/types';
 import type { PaginatedResultBase } from '@krgeobuk/core/interfaces';
 
 interface UserState {
@@ -58,7 +58,10 @@ export const fetchUserById = createAsyncThunk(
 // 관리자 기능: 사용자 수정
 export const updateUser = createAsyncThunk(
   'user/updateUser',
-  async ({ userId, userData }: { userId: string; userData: Partial<User> }, { rejectWithValue }) => {
+  async (
+    { userId, userData }: { userId: string; userData: Partial<User> },
+    { rejectWithValue }
+  ) => {
     try {
       return await userService.updateUser(userId, userData);
     } catch (error) {
@@ -135,7 +138,7 @@ const userSlice = createSlice({
       })
       .addCase(updateUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        const index = state.users.findIndex(user => user.id === action.payload.id);
+        const index = state.users.findIndex((user) => user.id === action.payload.id);
         if (index !== -1) {
           state.users[index] = action.payload as unknown as UserSearchResult;
         }
@@ -155,7 +158,7 @@ const userSlice = createSlice({
       })
       .addCase(deleteUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.users = state.users.filter(user => user.id !== action.payload);
+        state.users = state.users.filter((user) => user.id !== action.payload);
         if (state.selectedUser?.id === action.payload) {
           state.selectedUser = null;
         }
@@ -170,4 +173,3 @@ const userSlice = createSlice({
 
 export const { clearError, setSelectedUser, clearUsers } = userSlice.actions;
 export default userSlice.reducer;
-

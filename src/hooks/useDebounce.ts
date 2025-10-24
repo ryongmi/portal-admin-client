@@ -40,7 +40,7 @@ export function useDebounce<T>(value: T, delay: number = 500): T {
     }, delay);
 
     // 클린업: 다음 effect 실행 전 또는 컴포넌트 언마운트 시 타이머 취소
-    return () => {
+    return (): void => {
       clearTimeout(handler);
     };
   }, [value, delay]);
