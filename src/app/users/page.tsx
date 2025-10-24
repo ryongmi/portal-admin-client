@@ -31,6 +31,7 @@ import FormField, { Input } from '@/components/common/FormField';
 import { ApiErrorMessage } from '@/components/common/ErrorMessage';
 import { useLoadingState } from '@/hooks/useLoadingState';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
+import { useDebounce } from '@/hooks/useDebounce';
 import { validationRules, mapServerErrorsToFormErrors } from '@/utils/formValidation';
 import { toast } from '@/components/common/ToastContainer';
 import type { UserDetail, UserSearchResult, UserSearchQuery } from '@/types';
@@ -50,6 +51,14 @@ export default function ReduxUsersPage(): JSX.Element {
   const [formError, setFormError] = useState<string | null>(null);
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // 디바운싱을 위한 로컬 입력 상태
+  const [emailInput, setEmailInput] = useState('');
+  const [nameInput, setNameInput] = useState('');
+
+  // 디바운싱된 값 (500ms 지연)
+  const debouncedEmail = useDebounce(emailInput, 500);
+  const debouncedName = useDebounce(nameInput, 500);
 
   // 로딩 상태 관리
   const { isLoading: isActionsLoading, withLoading } = useLoadingState();
@@ -93,6 +102,28 @@ export default function ReduxUsersPage(): JSX.Element {
       setTimeout(() => dispatch(clearError()), 5000);
     }
   }, [error, dispatch]);
+
+  // 디바운싱된 email 값이 변경되면 검색 실행
+  useEffect(() => {
+    const trimmedValue = debouncedEmail.trim();
+    const newQuery = {
+      ...searchQuery,
+      email: trimmedValue === '' ? undefined : trimmedValue,
+    };
+    setSearchQuery(newQuery);
+    dispatch(fetchUsers(newQuery));
+  }, [debouncedEmail, dispatch]);
+
+  // 디바운싱된 name 값이 변경되면 검색 실행
+  useEffect(() => {
+    const trimmedValue = debouncedName.trim();
+    const newQuery = {
+      ...searchQuery,
+      name: trimmedValue === '' ? undefined : trimmedValue,
+    };
+    setSearchQuery(newQuery);
+    dispatch(fetchUsers(newQuery));
+  }, [debouncedName, dispatch]);
 
   const handleSearch = (query: UserSearchQuery): void => {
     setSearchQuery(query);
@@ -424,7 +455,8 @@ export default function ReduxUsersPage(): JSX.Element {
                   type="email"
                   placeholder="이메일을 입력하세요"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  onChange={(e) => handleSearch({ ...searchQuery, email: e.target.value })}
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
                 />
               </div>
               <div>
@@ -433,11 +465,16 @@ export default function ReduxUsersPage(): JSX.Element {
                   type="text"
                   placeholder="이름을 입력하세요"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  onChange={(e) => handleSearch({ ...searchQuery, name: e.target.value })}
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
                 />
               </div>
               <div className="flex items-end">
-                <Button onClick={() => handleSearch({})}>검색 초기화</Button>
+                <Button onClick={() => {
+                  setEmailInput('');
+                  setNameInput('');
+                  handleSearch({});
+                }}>검색 초기화</Button>
               </div>
             </div>
           </div>
