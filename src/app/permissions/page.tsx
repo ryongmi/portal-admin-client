@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   fetchPermissions,
@@ -17,33 +16,23 @@ import Layout from '@/components/layout/Layout';
 import AdminAuthGuard from '@/components/auth/AdminAuthGuard';
 import Table from '@/components/common/Table';
 import Button from '@/components/common/Button';
-import Modal from '@/components/common/Modal';
 import Pagination from '@/components/common/Pagination';
 import LoadingButton from '@/components/common/LoadingButton';
 import LoadingOverlay from '@/components/common/LoadingOverlay';
-import { TableRowSkeleton } from '@/components/common/SkeletonLoader';
-import FormField, { Input, Textarea, Select } from '@/components/common/FormField';
-import { ApiErrorMessage } from '@/components/common/ErrorMessage';
+import PermissionFormModal from '@/components/modals/PermissionFormModal';
+import DeleteConfirmModal from '@/components/modals/DeleteConfirmModal';
 import { useLoadingState } from '@/hooks/useLoadingState';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
 import { useDebounce } from '@/hooks/useDebounce';
-import { mapServerErrorsToFormErrors } from '@/utils/formValidation';
 import { toast } from '@/components/common/ToastContainer';
 import type {
-  PermissionDetail,
+  // PermissionDetail,
   PermissionSearchResult,
   PermissionSearchQuery,
   CreatePermissionRequest,
   UpdatePermissionRequest,
 } from '@/types';
 import { SortOrderType } from '@krgeobuk/core/enum';
-
-// 폼 데이터 타입 정의
-type PermissionFormData = {
-  action: string;
-  description: string;
-  serviceId: string;
-};
 
 export default function ReduxPermissionsPage(): JSX.Element {
   const dispatch = useAppDispatch();
@@ -69,22 +58,6 @@ export default function ReduxPermissionsPage(): JSX.Element {
   // 에러 핸들러
   const { handleApiError } = useErrorHandler();
 
-  // React Hook Form 설정
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    reset,
-    setError,
-  } = useForm<PermissionFormData>({
-    defaultValues: {
-      action: '',
-      description: '',
-      serviceId: '',
-    },
-    mode: 'onChange',
-  });
-
   // 초기 데이터 로드
   useEffect(() => {
     dispatch(fetchPermissions({}));
@@ -102,10 +75,12 @@ export default function ReduxPermissionsPage(): JSX.Element {
   // 디바운싱된 action 값이 변경되면 검색 실행
   useEffect(() => {
     const trimmedValue = debouncedAction.trim();
-    const newQuery = {
+    const newQuery: PermissionSearchQuery = {
       ...searchQuery,
-      action: trimmedValue === '' ? undefined : trimmedValue,
     };
+    if (trimmedValue !== '') {
+      newQuery.action = trimmedValue;
+    }
     setSearchQuery(newQuery);
     dispatch(fetchPermissions(newQuery));
   }, [debouncedAction, dispatch]);
@@ -122,27 +97,15 @@ export default function ReduxPermissionsPage(): JSX.Element {
   };
 
   // 모달 열기
-  const handleOpenModal = async (permissionSearchResult?: PermissionSearchResult): Promise<void> => {
+  const handleOpenModal = async (
+    permissionSearchResult?: PermissionSearchResult
+  ): Promise<void> => {
     try {
       if (permissionSearchResult) {
         // 상세 데이터 API 호출
-        const fullPermissionData: PermissionDetail = await dispatch(
-          fetchPermissionById(permissionSearchResult.id)
-        ).unwrap();
-
-        // 전체 데이터로 폼 초기화
-        reset({
-          action: fullPermissionData.action || '',
-          description: fullPermissionData.description || '',
-          serviceId: fullPermissionData.service?.id || '',
-        });
+        await dispatch(fetchPermissionById(permissionSearchResult.id)).unwrap();
       } else {
         dispatch(setSelectedPermission(null));
-        reset({
-          action: '',
-          description: '',
-          serviceId: '',
-        });
       }
       setFormError(null);
       setIsModalOpen(true);
@@ -156,68 +119,42 @@ export default function ReduxPermissionsPage(): JSX.Element {
     setIsModalOpen(false);
     dispatch(setSelectedPermission(null));
     setFormError(null);
-    reset();
   };
 
   // 권한 저장
-  const onSubmit = withLoading(
+  const handleSubmitPermission = withLoading(
     'save',
-    async (data: { action: string; description: string; serviceId: string }) => {
+    async (data: CreatePermissionRequest | UpdatePermissionRequest) => {
       try {
         setFormError(null);
 
         if (selectedPermission && selectedPermission.id) {
-          const updateData: UpdatePermissionRequest = {
-            action: data.action,
-            description: data.description,
-          };
           await dispatch(
-            updatePermission({ permissionId: selectedPermission.id, permissionData: updateData })
+            updatePermission({
+              permissionId: selectedPermission.id,
+              permissionData: data as UpdatePermissionRequest,
+            })
           ).unwrap();
-
           toast.success('권한 수정 완료', '권한이 성공적으로 수정되었습니다.');
         } else {
-          const createData: CreatePermissionRequest = {
-            action: data.action,
-            description: data.description,
-            serviceId: data.serviceId,
-          };
-          await dispatch(createPermission(createData)).unwrap();
-
+          await dispatch(createPermission(data as CreatePermissionRequest)).unwrap();
           toast.success('권한 생성 완료', '새 권한이 성공적으로 생성되었습니다.');
         }
 
         handleCloseModal();
         dispatch(fetchPermissions(searchQuery));
       } catch (error: unknown) {
-        // 서버 에러를 폼 에러로 매핑
-        const formErrors = mapServerErrorsToFormErrors(
-          (error as { response?: { data?: { errors?: Record<string, string> } } })?.response?.data?.errors || {}
-        );
-
-        // 각 필드별 에러 설정
-        Object.keys(formErrors).forEach((field) => {
-          if (field === 'action' || field === 'description' || field === 'serviceId') {
-            const errorMessage = formErrors[field];
-            if (errorMessage) {
-              const message =
-                typeof errorMessage === 'string'
-                  ? errorMessage
-                  : errorMessage.message || 'Invalid input';
-              setError(field as keyof typeof data, { type: 'server', message });
-            }
-          }
-        });
-
-        // 일반적인 에러 메시지 설정
         const errorMessage = handleApiError(error as Error, { showToast: false });
         setFormError(errorMessage);
+        throw error;
       }
     }
   );
 
   // 삭제 모달 열기
-  const handleOpenDeleteModal = async (permissionSearchResult: PermissionSearchResult): Promise<void> => {
+  const handleOpenDeleteModal = async (
+    permissionSearchResult: PermissionSearchResult
+  ): Promise<void> => {
     try {
       // 상세 데이터 API 호출
       await dispatch(fetchPermissionById(permissionSearchResult.id)).unwrap();
@@ -234,7 +171,7 @@ export default function ReduxPermissionsPage(): JSX.Element {
   };
 
   // 권한 삭제
-  const handleDeletePermission = withLoading('delete', async () => {
+  const handleDeletePermission = async (): Promise<void> => {
     if (selectedPermission && selectedPermission.id) {
       try {
         await dispatch(deletePermission(selectedPermission.id)).unwrap();
@@ -243,9 +180,10 @@ export default function ReduxPermissionsPage(): JSX.Element {
         dispatch(fetchPermissions(searchQuery));
       } catch (error) {
         handleApiError(error);
+        throw error;
       }
     }
-  });
+  };
 
   // 서비스 이름 가져오기
   const _getServiceName = (serviceId: string): string => {
@@ -411,10 +349,13 @@ export default function ReduxPermissionsPage(): JSX.Element {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   onChange={(e) => {
                     const value = e.target.value;
-                    handleSearch({
-                      ...searchQuery,
-                      serviceId: value === '' ? undefined : value,
-                    });
+                    const newQuery: PermissionSearchQuery = { ...searchQuery };
+                    if (value !== '') {
+                      newQuery.serviceId = value;
+                    } else {
+                      delete newQuery.serviceId;
+                    }
+                    handleSearch(newQuery);
                   }}
                 >
                   <option value="">모든 서비스</option>
@@ -426,34 +367,30 @@ export default function ReduxPermissionsPage(): JSX.Element {
                 </select>
               </div>
               <div className="flex items-end">
-                <Button onClick={() => {
-                  setActionInput('');
-                  handleSearch({});
-                }}>검색 초기화</Button>
+                <Button
+                  onClick={() => {
+                    setActionInput('');
+                    handleSearch({});
+                  }}
+                >
+                  검색 초기화
+                </Button>
               </div>
             </div>
           </div>
 
           {/* 테이블 */}
           <LoadingOverlay isLoading={isLoading} text="권한 목록을 불러오는 중...">
-            {isLoading && permissions.length === 0 ? (
-              <div className="bg-white rounded-lg shadow space-y-4 p-6">
-                {Array.from({ length: 5 }).map((_, index) => (
-                  <TableRowSkeleton key={index} />
-                ))}
-              </div>
-            ) : (
-              <Table
-                data={permissions}
-                columns={columns}
-                loading={false}
-                sortBy="action"
-                sortOrder={SortOrderType.DESC}
-                onSort={(_column) => {
-                  // Sort functionality placeholder
-                }}
-              />
-            )}
+            <Table
+              data={permissions}
+              columns={columns}
+              loading={false}
+              sortBy="action"
+              sortOrder={SortOrderType.DESC}
+              onSort={(_column) => {
+                // Sort functionality placeholder
+              }}
+            />
           </LoadingOverlay>
 
           {/* 페이지네이션 */}
@@ -466,139 +403,29 @@ export default function ReduxPermissionsPage(): JSX.Element {
           />
 
           {/* 권한 생성/수정 모달 */}
-          <Modal
+          <PermissionFormModal
             isOpen={isModalOpen}
             onClose={handleCloseModal}
-            title={selectedPermission ? '권한 수정' : '새 권한 추가'}
-            size="lg"
-          >
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              {/* 일반적인 에러 메시지 */}
-              {formError && (
-                <ApiErrorMessage
-                  error={{ message: formError }}
-                  onDismiss={() => setFormError(null)}
-                />
-              )}
-
-              <FormField
-                label="액션"
-                required
-                {...(errors.action?.message && { error: errors.action.message })}
-                hint="일반적으로 리소스.액션 형태로 입력합니다. (예: user.read, role.write)"
-                className="pb-4"
-              >
-                <Input
-                  type="text"
-                  {...register('action', {
-                    required: '액션을 입력해주세요',
-                    pattern: {
-                      value: /^[a-zA-Z0-9_-]+:[a-zA-Z0-9_-]+$/,
-                      message: '액션은 "resource:action" 형식이어야 합니다',
-                    },
-                    minLength: {
-                      value: 3,
-                      message: '액션은 최소 3자 이상이어야 합니다',
-                    },
-                    maxLength: {
-                      value: 100,
-                      message: '액션은 최대 100자까지 입력 가능합니다',
-                    },
-                  })}
-                  required
-                  {...(errors.action?.message && { error: errors.action.message })}
-                  placeholder="예: user.read, user.write, user.delete"
-                />
-              </FormField>
-
-              <FormField
-                label="설명"
-                {...(errors.description?.message && { error: errors.description.message })}
-                hint="권한에 대한 상세한 설명을 입력하세요 (선택사항)"
-                className="pb-4"
-              >
-                <Textarea
-                  {...register('description', {
-                    maxLength: {
-                      value: 500,
-                      message: '설명은 최대 500자까지 입력 가능합니다',
-                    },
-                  })}
-                  {...(errors.description?.message && { error: errors.description.message })}
-                  rows={3}
-                  placeholder="권한에 대한 설명을 입력하세요 (선택사항)"
-                />
-              </FormField>
-
-              {!selectedPermission && (
-                <FormField
-                  label="서비스"
-                  required
-                  {...(errors.serviceId?.message && { error: errors.serviceId.message })}
-                  hint="이 권한이 속할 서비스를 선택하세요"
-                  className="pb-4"
-                >
-                  <Select
-                    {...register('serviceId', {
-                      required: '서비스를 선택해주세요',
-                    })}
-                    {...(errors.serviceId?.message && { error: errors.serviceId.message })}
-                    placeholder="서비스를 선택하세요"
-                    options={services.map((service) => ({
-                      value: service.id!,
-                      label: service?.name ?? '',
-                    }))}
-                  />
-                </FormField>
-              )}
-
-              <div className="flex justify-end space-x-3 pt-4">
-                <Button type="button" variant="outline" onClick={handleCloseModal}>
-                  취소
-                </Button>
-                <LoadingButton
-                  type="submit"
-                  isLoading={isActionsLoading('save')}
-                  loadingText="저장 중..."
-                  disabled={isSubmitting}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  {selectedPermission ? '수정' : '생성'}
-                </LoadingButton>
-              </div>
-            </form>
-          </Modal>
+            onSubmit={handleSubmitPermission}
+            permission={selectedPermission}
+            services={services}
+            isLoading={isActionsLoading('save')}
+            error={formError}
+            onErrorDismiss={() => setFormError(null)}
+          />
 
           {/* 삭제 확인 모달 */}
-          <Modal
+          <DeleteConfirmModal
             isOpen={isDeleteModalOpen}
             onClose={handleCloseDeleteModal}
+            onConfirm={handleDeletePermission}
             title="권한 삭제"
-            size="sm"
-          >
-            <div className="space-y-4">
-              <p className="text-gray-700">
-                정말로 <strong>{selectedPermission?.action}</strong> 권한을 삭제하시겠습니까?
-              </p>
-              <p className="text-sm text-red-600">이 작업은 되돌릴 수 없습니다.</p>
-              <div className="flex justify-end space-x-3">
-                <Button variant="outline" onClick={handleCloseDeleteModal}>
-                  취소
-                </Button>
-                <LoadingButton
-                  onClick={handleDeletePermission}
-                  isLoading={isActionsLoading('delete')}
-                  loadingText="삭제 중..."
-                  className="bg-red-600 hover:bg-red-700"
-                >
-                  삭제
-                </LoadingButton>
-              </div>
-            </div>
-          </Modal>
+            message="정말로 이 권한을 삭제하시겠습니까?"
+            {...(selectedPermission?.action && { itemName: selectedPermission.action })}
+            isLoading={isActionsLoading('delete')}
+          />
         </div>
       </Layout>
     </AdminAuthGuard>
   );
 }
-

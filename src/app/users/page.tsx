@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   fetchUsers,
@@ -9,32 +8,28 @@ import {
   setSelectedUser,
   clearError,
   updateUser,
-  deleteUser,
 } from '@/store/slices/userSlice';
 import {
   fetchRoles,
   assignRoleToUser,
   removeRoleFromUser,
-  fetchUserRoles
+  fetchUserRoles,
 } from '@/store/slices/roleSlice';
 import { fetchServices } from '@/store/slices/serviceSlice';
 import Layout from '@/components/layout/Layout';
 import AdminAuthGuard from '@/components/auth/AdminAuthGuard';
 import Table from '@/components/common/Table';
 import Button from '@/components/common/Button';
-import Modal from '@/components/common/Modal';
 import Pagination from '@/components/common/Pagination';
-import LoadingButton from '@/components/common/LoadingButton';
+// import LoadingButton from '@/components/common/LoadingButton';
 import LoadingOverlay from '@/components/common/LoadingOverlay';
-import { TableRowSkeleton } from '@/components/common/SkeletonLoader';
-import FormField, { Input } from '@/components/common/FormField';
-import { ApiErrorMessage } from '@/components/common/ErrorMessage';
+import UserFormModal from '@/components/modals/UserFormModal';
+import UserRoleModal from '@/components/modals/UserRoleModal';
 import { useLoadingState } from '@/hooks/useLoadingState';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
 import { useDebounce } from '@/hooks/useDebounce';
-import { validationRules, mapServerErrorsToFormErrors } from '@/utils/formValidation';
 import { toast } from '@/components/common/ToastContainer';
-import type { UserDetail, UserSearchResult, UserSearchQuery } from '@/types';
+import type { UserSearchResult, UserSearchQuery } from '@/types';
 import { SortOrderType } from '@krgeobuk/core/enum';
 
 export default function ReduxUsersPage(): JSX.Element {
@@ -50,7 +45,6 @@ export default function ReduxUsersPage(): JSX.Element {
   const [searchQuery, setSearchQuery] = useState<UserSearchQuery>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [userRoles, setUserRoles] = useState<string[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // 디바운싱을 위한 로컬 입력 상태
   const [emailInput, setEmailInput] = useState('');
@@ -65,28 +59,6 @@ export default function ReduxUsersPage(): JSX.Element {
 
   // 에러 핸들러
   const { handleApiError } = useErrorHandler();
-
-  // React Hook Form 설정
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    reset,
-    setError,
-  } = useForm<{
-    email: string;
-    name: string;
-    nickname: string;
-    password: string;
-  }>({
-    defaultValues: {
-      email: '',
-      name: '',
-      nickname: '',
-      password: '',
-    },
-    mode: 'onChange',
-  });
 
   // 초기 데이터 로드
   useEffect(() => {
@@ -106,10 +78,12 @@ export default function ReduxUsersPage(): JSX.Element {
   // 디바운싱된 email 값이 변경되면 검색 실행
   useEffect(() => {
     const trimmedValue = debouncedEmail.trim();
-    const newQuery = {
+    const newQuery: UserSearchQuery = {
       ...searchQuery,
-      email: trimmedValue === '' ? undefined : trimmedValue,
     };
+    if (trimmedValue !== '') {
+      newQuery.email = trimmedValue;
+    }
     setSearchQuery(newQuery);
     dispatch(fetchUsers(newQuery));
   }, [debouncedEmail, dispatch]);
@@ -117,10 +91,12 @@ export default function ReduxUsersPage(): JSX.Element {
   // 디바운싱된 name 값이 변경되면 검색 실행
   useEffect(() => {
     const trimmedValue = debouncedName.trim();
-    const newQuery = {
+    const newQuery: UserSearchQuery = {
       ...searchQuery,
-      name: trimmedValue === '' ? undefined : trimmedValue,
     };
+    if (trimmedValue !== '') {
+      newQuery.name = trimmedValue;
+    }
     setSearchQuery(newQuery);
     dispatch(fetchUsers(newQuery));
   }, [debouncedName, dispatch]);
@@ -138,25 +114,9 @@ export default function ReduxUsersPage(): JSX.Element {
     try {
       if (userSearchResult) {
         // 상세 데이터 API 호출
-        const fullUserData: UserDetail = await dispatch(
-          fetchUserById(userSearchResult.id)
-        ).unwrap();
-
-        // 전체 데이터로 폼 초기화 (selectedUser는 reducer에서 자동 설정됨)
-        reset({
-          email: fullUserData.email || '',
-          name: fullUserData.name || '',
-          nickname: fullUserData.nickname || '',
-          password: '',
-        });
+        await dispatch(fetchUserById(userSearchResult.id)).unwrap();
       } else {
         dispatch(setSelectedUser(null));
-        reset({
-          email: '',
-          name: '',
-          nickname: '',
-          password: '',
-        });
       }
       setFormError(null);
       setIsModalOpen(true);
@@ -169,13 +129,10 @@ export default function ReduxUsersPage(): JSX.Element {
     setIsModalOpen(false);
     dispatch(setSelectedUser(null));
     setFormError(null);
-    reset();
   };
 
   const handleOpenRoleModal = async (userSearchResult: UserSearchResult): Promise<void> => {
     try {
-      // 사용자 ID 저장
-      setCurrentUserId(userSearchResult.id);
       // 상세 데이터 API 호출
       await dispatch(fetchUserById(userSearchResult.id)).unwrap();
       // 사용자의 현재 역할 목록 조회 (Redux dispatch 사용)
@@ -191,7 +148,6 @@ export default function ReduxUsersPage(): JSX.Element {
     setIsRoleModalOpen(false);
     dispatch(setSelectedUser(null));
     setUserRoles([]);
-    setCurrentUserId(null);
   };
 
   const handleAssignRole = withLoading('assignRole', async (userId: string, roleId: string) => {
@@ -224,19 +180,16 @@ export default function ReduxUsersPage(): JSX.Element {
     }
   });
 
-  // Form data는 React Hook Form으로 관리되므로 별도의 handleFormChange 불필요
-
-  const onSubmit = withLoading(
-    'submit',
-    async (data: { email: string; name: string; nickname: string; password: string }) => {
+  const handleSubmitUser = withLoading(
+    'save',
+    async (data: { email: string; name: string; nickname: string; password?: string }) => {
       try {
         setFormError(null);
 
-        if (selectedUser) {
-          // 수정
+        if (selectedUser && selectedUser.id) {
           await dispatch(
             updateUser({
-              userId: selectedUser.id!,
+              userId: selectedUser.id,
               userData: {
                 email: data.email,
                 name: data.name,
@@ -244,59 +197,18 @@ export default function ReduxUsersPage(): JSX.Element {
               },
             })
           ).unwrap();
-
           toast.success('사용자 수정 완료', '사용자 정보가 성공적으로 수정되었습니다.');
-        } else {
-          // 사용자 생성 기능은 제거되었습니다
-          toast.error('기능 제한', '사용자 생성 기능은 현재 지원되지 않습니다.');
-          return;
         }
 
         handleCloseModal();
         dispatch(fetchUsers(searchQuery));
       } catch (error: unknown) {
-        // 서버 에러를 폼 에러로 매핑
-        const formErrors = mapServerErrorsToFormErrors(
-          (error as { response?: { data?: { errors?: Record<string, string> } } })?.response?.data?.errors || {}
-        );
-
-        // 각 필드별 에러 설정
-        Object.keys(formErrors).forEach((field) => {
-          if (
-            field === 'email' ||
-            field === 'name' ||
-            field === 'nickname' ||
-            field === 'password'
-          ) {
-            const errorMessage = formErrors[field];
-            if (errorMessage) {
-              const message =
-                typeof errorMessage === 'string'
-                  ? errorMessage
-                  : errorMessage.message || 'Invalid input';
-              setError(field as keyof typeof data, { type: 'manual', message });
-            }
-          }
-        });
-
-        // 일반적인 에러 메시지 설정
         const errorMessage = handleApiError(error as Error, { showToast: false });
         setFormError(errorMessage);
+        throw error;
       }
     }
   );
-
-  const handleDelete = withLoading('delete', async (userId: string) => {
-    if (window.confirm('정말로 이 사용자를 삭제하시겠습니까?')) {
-      try {
-        await dispatch(deleteUser(userId)).unwrap();
-        toast.success('사용자 삭제 완료', '사용자가 성공적으로 삭제되었습니다.');
-        dispatch(fetchUsers(searchQuery));
-      } catch (error) {
-        handleApiError(error);
-      }
-    }
-  });
 
   // Utility function for date formatting (currently unused)
   const _formatDate = (dateString: string): string => {
@@ -349,25 +261,31 @@ export default function ReduxUsersPage(): JSX.Element {
       key: 'nickname' as keyof UserSearchResult,
       label: '닉네임',
       sortable: false,
-      render: (value: UserSearchResult[keyof UserSearchResult]): string => String(value || '미설정'),
+      render: (value: UserSearchResult[keyof UserSearchResult]): string =>
+        String(value || '미설정'),
     },
     {
       key: 'isEmailVerified' as keyof UserSearchResult,
       label: '이메일 인증',
       sortable: false,
-      render: (value: UserSearchResult[keyof UserSearchResult]): string => (value ? '인증완료' : '미인증'),
+      render: (value: UserSearchResult[keyof UserSearchResult]): string =>
+        value ? '인증완료' : '미인증',
     },
     {
       key: 'isIntegrated' as keyof UserSearchResult,
       label: '통합계정',
       sortable: false,
-      render: (value: UserSearchResult[keyof UserSearchResult]): string => (value ? '통합됨' : '연동안됨'),
+      render: (value: UserSearchResult[keyof UserSearchResult]): string =>
+        value ? '통합됨' : '연동안됨',
     },
     {
       key: 'id' as keyof UserSearchResult,
       label: '작업',
       sortable: false,
-      render: (_value: UserSearchResult[keyof UserSearchResult], row: UserSearchResult): JSX.Element => (
+      render: (
+        _value: UserSearchResult[keyof UserSearchResult],
+        row: UserSearchResult
+      ): JSX.Element => (
         <div className="flex justify-center space-x-2">
           <Button size="sm" variant="outline" onClick={() => handleOpenModal(row)}>
             수정
@@ -375,15 +293,6 @@ export default function ReduxUsersPage(): JSX.Element {
           <Button size="sm" variant="outline" onClick={() => handleOpenRoleModal(row)}>
             역할 관리
           </Button>
-          <LoadingButton
-            size="sm"
-            variant="outline"
-            onClick={() => handleDelete(row.id)}
-            isLoading={isActionsLoading('delete')}
-            className="text-red-600 border-red-300 hover:bg-red-50"
-          >
-            삭제
-          </LoadingButton>
         </div>
       ),
     },
@@ -470,35 +379,31 @@ export default function ReduxUsersPage(): JSX.Element {
                 />
               </div>
               <div className="flex items-end">
-                <Button onClick={() => {
-                  setEmailInput('');
-                  setNameInput('');
-                  handleSearch({});
-                }}>검색 초기화</Button>
+                <Button
+                  onClick={() => {
+                    setEmailInput('');
+                    setNameInput('');
+                    handleSearch({});
+                  }}
+                >
+                  검색 초기화
+                </Button>
               </div>
             </div>
           </div>
 
           {/* 테이블 */}
           <LoadingOverlay isLoading={isLoading} text="사용자 목록을 불러오는 중...">
-            {isLoading && users.length === 0 ? (
-              <div className="bg-white rounded-lg shadow space-y-4 p-6">
-                {Array.from({ length: 5 }).map((_, index) => (
-                  <TableRowSkeleton key={index} />
-                ))}
-              </div>
-            ) : (
-              <Table
-                data={users}
-                columns={columns}
-                loading={false}
-                sortBy="createdAt"
-                sortOrder={SortOrderType.DESC}
-                onSort={(_column) => {
-                  // 정렬 처리
-                }}
-              />
-            )}
+            <Table
+              data={users}
+              columns={columns}
+              loading={false}
+              sortBy="createdAt"
+              sortOrder={SortOrderType.DESC}
+              onSort={(_column) => {
+                // 정렬 처리
+              }}
+            />
           </LoadingOverlay>
 
           {/* 페이지네이션 */}
@@ -511,359 +416,29 @@ export default function ReduxUsersPage(): JSX.Element {
           />
 
           {/* 사용자 수정 모달 */}
-          <Modal
+          <UserFormModal
             isOpen={isModalOpen}
             onClose={handleCloseModal}
-            title={selectedUser ? '사용자 수정' : '새 사용자 추가'}
-            size="lg"
-          >
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              {/* 일반적인 에러 메시지 */}
-              {formError && (
-                <ApiErrorMessage
-                  error={{ message: formError }}
-                  onDismiss={() => setFormError(null)}
-                />
-              )}
-
-              <FormField
-                label="이메일"
-                required
-                {...(errors.email?.message && { error: errors.email.message })}
-                className="pb-4"
-              >
-                <Input
-                  type="email"
-                  {...register('email', validationRules.email)}
-                  {...(errors.email?.message && { error: errors.email.message })}
-                  placeholder="example@domain.com"
-                />
-              </FormField>
-
-              <FormField
-                label="이름"
-                required
-                {...(errors.name?.message && { error: errors.name.message })}
-                className="pb-4"
-              >
-                <Input
-                  type="text"
-                  {...register('name', validationRules.name)}
-                  {...(errors.name?.message && { error: errors.name.message })}
-                  placeholder="사용자 이름을 입력하세요"
-                />
-              </FormField>
-
-              <FormField
-                label="닉네임"
-                {...(errors.nickname?.message && { error: errors.nickname.message })}
-                hint="다른 사용자들에게 표시될 이름입니다"
-                className="pb-4"
-              >
-                <Input
-                  type="text"
-                  {...register('nickname', {
-                    maxLength: {
-                      value: 30,
-                      message: '닉네임은 최대 30자까지 입력 가능합니다',
-                    },
-                  })}
-                  {...(errors.nickname?.message && { error: errors.nickname.message })}
-                  placeholder="닉네임을 입력하세요 (선택사항)"
-                />
-              </FormField>
-
-              {!selectedUser && (
-                <FormField
-                  label="비밀번호"
-                  required
-                  {...(errors.password?.message && { error: errors.password.message })}
-                  hint="최소 8자, 대소문자, 숫자, 특수문자 포함"
-                  className="pb-4"
-                >
-                  <Input
-                    type="password"
-                    {...register('password', validationRules.password)}
-                    {...(errors.password?.message && { error: errors.password.message })}
-                    placeholder="안전한 비밀번호를 입력하세요"
-                  />
-                </FormField>
-              )}
-
-              <div className="flex justify-end space-x-3 pt-4">
-                <Button type="button" variant="outline" onClick={handleCloseModal}>
-                  취소
-                </Button>
-                <LoadingButton
-                  type="submit"
-                  isLoading={isActionsLoading('submit')}
-                  loadingText="처리 중..."
-                  disabled={isSubmitting}
-                >
-                  {selectedUser ? '수정' : '추가'}
-                </LoadingButton>
-              </div>
-            </form>
-          </Modal>
+            onSubmit={handleSubmitUser}
+            user={selectedUser}
+            isLoading={isActionsLoading('save')}
+            error={formError}
+            onErrorDismiss={() => setFormError(null)}
+          />
 
           {/* 역할 관리 모달 */}
-          <Modal
+          <UserRoleModal
             isOpen={isRoleModalOpen}
             onClose={handleCloseRoleModal}
-            title="역할 관리"
-            size="xl"
-          >
-            <div className="space-y-6">
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-medium text-blue-900">사용자 정보</h4>
-                <p className="text-sm text-blue-600">
-                  이메일: {selectedUser?.email} | 이름: {selectedUser?.name}
-                </p>
-              </div>
-
-              {/* 현재 할당된 역할 */}
-              <div>
-                <h4 className="font-medium text-gray-900 mb-3">현재 할당된 역할</h4>
-                {userRoles.length > 0 ? (
-                  <div className="space-y-4">
-                    {/* 서비스별 역할 그룹 */}
-                    {services.map((service) => {
-                      const serviceRoles = userRoles
-                        .map((roleId) => roles.find((r) => r.id === roleId))
-                        .filter((role) => role && role.service?.id === service.id);
-                      
-                      if (serviceRoles.length === 0) return null;
-
-                      return (
-                        <div key={service.id} className="border border-green-200 rounded-lg p-4 bg-green-50">
-                          <div className="flex items-center space-x-2 mb-3">
-                            <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                            </svg>
-                            <span className="font-medium text-green-800">{service.name}</span>
-                            <span className="text-xs text-green-600">({serviceRoles.length}개)</span>
-                          </div>
-                          <div className="grid grid-cols-1 gap-2">
-                            {serviceRoles.map((role) => (
-                              <div
-                                key={role!.id}
-                                className="flex items-center justify-between p-2 bg-white border border-green-200 rounded"
-                              >
-                                <div className="flex-1">
-                                  <div className="flex items-center space-x-2">
-                                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                    <span className="font-medium text-green-800">{role!.name}</span>
-                                  </div>
-                                  <p className="text-xs text-green-600 mt-1">{role!.description}</p>
-                                </div>
-                                <LoadingButton
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() =>
-                                    currentUserId && handleRemoveRole(currentUserId, role!.id!)
-                                  }
-                                  isLoading={isActionsLoading('removeRole')}
-                                  loadingText="제거중"
-                                  disabled={!currentUserId}
-                                  className="text-red-600 border-red-300 hover:bg-red-50 ml-2"
-                                >
-                                  제거
-                                </LoadingButton>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    {/* 서비스에 속하지 않는 기타 역할 그룹 */}
-                    {((): JSX.Element | null => {
-                      const unassignedRoles = userRoles
-                        .map((roleId) => roles.find((r) => r.id === roleId))
-                        .filter((role) => role && !role.service?.id);
-                      
-                      if (unassignedRoles.length === 0) return null;
-
-                      return (
-                        <div key="unassigned" className="border border-purple-200 rounded-lg p-4 bg-purple-50">
-                          <div className="flex items-center space-x-2 mb-3">
-                            <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                            </svg>
-                            <span className="font-medium text-purple-800">시스템 관리자</span>
-                            <span className="text-xs text-purple-600">({unassignedRoles.length}개)</span>
-                          </div>
-                          <div className="grid grid-cols-1 gap-2">
-                            {unassignedRoles.map((role) => (
-                              <div
-                                key={role!.id}
-                                className="flex items-center justify-between p-2 bg-white border border-purple-200 rounded"
-                              >
-                                <div className="flex-1">
-                                  <div className="flex items-center space-x-2">
-                                    <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                                    <span className="font-medium text-purple-800">{role!.name}</span>
-                                  </div>
-                                  <p className="text-xs text-purple-600 mt-1">{role!.description}</p>
-                                </div>
-                                <LoadingButton
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() =>
-                                    currentUserId && handleRemoveRole(currentUserId, role!.id!)
-                                  }
-                                  isLoading={isActionsLoading('removeRole')}
-                                  loadingText="제거중"
-                                  disabled={!currentUserId}
-                                  className="text-red-600 border-red-300 hover:bg-red-50 ml-2"
-                                >
-                                  제거
-                                </LoadingButton>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                ) : (
-                  <div className="text-center py-6 text-gray-500">
-                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-8V9a4 4 0 00-4-4H9a4 4 0 00-4 4v4h14V9z" />
-                    </svg>
-                    <p className="mt-2">할당된 역할이 없습니다</p>
-                  </div>
-                )}
-              </div>
-
-              {/* 할당 가능한 역할 */}
-              <div>
-                <h4 className="font-medium text-gray-900 mb-3">할당 가능한 역할</h4>
-                <div className="max-h-80 overflow-y-auto space-y-4">
-                  {/* 서비스별 할당 가능한 역할 그룹 */}
-                  {services.map((service) => {
-                    const availableRoles = roles.filter(
-                      (role) => role.service?.id === service.id && !userRoles.includes(role.id!)
-                    );
-                    
-                    if (availableRoles.length === 0) return null;
-
-                    return (
-                      <div key={service.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                        <div className="flex items-center space-x-2 mb-3">
-                          <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                          </svg>
-                          <span className="font-medium text-gray-800">{service.name}</span>
-                          <span className="text-xs text-gray-600">({availableRoles.length}개)</span>
-                        </div>
-                        <div className="grid grid-cols-1 gap-2">
-                          {availableRoles.map((role) => (
-                            <div
-                              key={role.id}
-                              className="flex items-center justify-between p-2 bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors"
-                            >
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-2">
-                                  <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-                                  <span className="font-medium text-gray-800">{role.name}</span>
-                                </div>
-                                <p className="text-xs text-gray-600 mt-1">{role.description}</p>
-                              </div>
-                              <LoadingButton
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  currentUserId && handleAssignRole(currentUserId, role.id!)
-                                }
-                                isLoading={isActionsLoading('assignRole')}
-                                loadingText="할당중"
-                                disabled={!currentUserId}
-                                className="text-blue-600 border-blue-600 hover:bg-blue-100 hover:text-blue-800 hover:border-blue-700 ml-2"
-                              >
-                                할당
-                              </LoadingButton>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {/* 서비스에 속하지 않는 할당 가능한 시스템 관리자 역할 */}
-                  {((): JSX.Element | null => {
-                    const unassignedAvailableRoles = roles.filter(
-                      (role) => !role.service?.id && !userRoles.includes(role.id!)
-                    );
-                    
-                    if (unassignedAvailableRoles.length === 0) return null;
-
-                    return (
-                      <div key="unassigned-available" className="border border-purple-200 rounded-lg p-4 bg-purple-50">
-                        <div className="flex items-center space-x-2 mb-3">
-                          <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                          </svg>
-                          <span className="font-medium text-purple-800">시스템 관리자</span>
-                          <span className="text-xs text-purple-600">({unassignedAvailableRoles.length}개)</span>
-                        </div>
-                        <div className="grid grid-cols-1 gap-2">
-                          {unassignedAvailableRoles.map((role) => (
-                            <div
-                              key={role.id}
-                              className="flex items-center justify-between p-2 bg-white border border-purple-200 rounded hover:bg-purple-50 transition-colors"
-                            >
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-2">
-                                  <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
-                                  <span className="font-medium text-purple-800">{role.name}</span>
-                                </div>
-                                <p className="text-xs text-purple-600 mt-1">{role.description}</p>
-                              </div>
-                              <LoadingButton
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  currentUserId && handleAssignRole(currentUserId, role.id!)
-                                }
-                                isLoading={isActionsLoading('assignRole')}
-                                loadingText="할당중"
-                                disabled={!currentUserId}
-                                className="text-purple-600 border-purple-600 hover:bg-purple-100 hover:text-purple-800 hover:border-purple-700 ml-2"
-                              >
-                                할당
-                              </LoadingButton>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-                
-                {roles.filter((role) => !userRoles.includes(role.id!)).length === 0 && (
-                  <div className="text-center py-6 text-gray-500">
-                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p className="mt-2">모든 역할이 이미 할당되었습니다</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-between items-center pt-4 border-t">
-                <div className="text-sm text-gray-600">
-                  총 {userRoles.length}개의 역할이 할당됨
-                </div>
-                <Button variant="outline" onClick={handleCloseRoleModal}>
-                  닫기
-                </Button>
-              </div>
-            </div>
-          </Modal>
+            user={selectedUser}
+            roles={roles}
+            userRoles={userRoles}
+            onAssignRole={handleAssignRole}
+            onRemoveRole={handleRemoveRole}
+            services={services}
+          />
         </div>
       </Layout>
     </AdminAuthGuard>
   );
 }
-
