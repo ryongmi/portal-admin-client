@@ -52,14 +52,14 @@ export const SystemHealthCard: React.FC<SystemHealthCardProps> = ({
   const overallConfig = statusConfig[overallHealth];
 
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/30 p-6">
+    <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/30 dark:border-gray-700/30 p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
           <div className={`p-3 rounded-xl ${overallConfig.bg}`}>
             <Server className={`w-6 h-6 ${overallConfig.color}`} />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">시스템 상태</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">시스템 상태</h3>
             <p className={`text-sm font-medium ${overallConfig.color}`}>
               전체 시스템: {overallConfig.label}
             </p>
@@ -71,7 +71,7 @@ export const SystemHealthCard: React.FC<SystemHealthCardProps> = ({
           className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
           title="새로고침"
         >
-          <Clock className="w-5 h-5 text-gray-500" />
+          <Clock className="w-5 h-5 text-gray-500 dark:text-gray-400" />
         </button>
       </div>
 
@@ -105,8 +105,8 @@ export const SystemHealthCard: React.FC<SystemHealthCardProps> = ({
         })}
       </div>
 
-      <div className="mt-6 pt-4 border-t border-gray-200">
-        <div className="flex items-center justify-between text-xs text-gray-500">
+      <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
           <span>마지막 업데이트</span>
           <span>{new Date().toLocaleTimeString('ko-KR')}</span>
         </div>

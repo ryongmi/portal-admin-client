@@ -112,7 +112,7 @@ export const Toast: React.FC<ToastProps> = ({
       className={`
         transform transition-all duration-300 ease-in-out
         ${isVisible && !isLeaving ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}
-        max-w-sm w-full bg-white shadow-lg rounded-lg border-l-4 ${getBorderColor()}
+        max-w-sm w-full bg-white dark:bg-gray-800 shadow-lg rounded-lg border-l-4 ${getBorderColor()}
         ${getBackgroundColor()} backdrop-blur-sm
       `}
       role="alert"
@@ -145,7 +145,7 @@ export const Toast: React.FC<ToastProps> = ({
           <div className="flex-shrink-0 ml-4">
             <button
               onClick={handleClose}
-              className="inline-flex text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600 transition-colors"
+              className="inline-flex text-gray-400 hover:text-gray-600 dark:text-gray-400 focus:outline-none focus:text-gray-600 dark:text-gray-400 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

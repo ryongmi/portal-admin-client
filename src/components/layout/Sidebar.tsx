@@ -111,16 +111,16 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps): JSX.Element
             }
           }}
           className={`w-full flex items-center rounded-lg transition-colors ${
-            level === 0 ? 'text-gray-900' : 'text-gray-600 ml-4'
-          } hover:bg-gray-100 ${
-            isCurrentPath 
-              ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-500' 
-              : isActive 
-                ? 'bg-gray-100' 
+            level === 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400 ml-4'
+          } hover:bg-gray-100 dark:hover:bg-gray-700 ${
+            isCurrentPath
+              ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-r-2 border-blue-500 dark:border-blue-400'
+              : isActive
+                ? 'bg-gray-100 dark:bg-gray-700'
                 : ''
           } ${
-            isOpen 
-              ? 'justify-between px-4 py-3 text-left text-sm font-medium' 
+            isOpen
+              ? 'justify-between px-4 py-3 text-left text-sm font-medium'
               : 'justify-center p-3'
           }`}
           title={!isOpen ? item.label : undefined}
@@ -161,22 +161,22 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps): JSX.Element
       
       {/* 사이드바 */}
       <div
-        className={`fixed top-16 bottom-0 left-0 z-50 bg-white shadow-xl transform transition-all duration-300 ease-in-out lg:static lg:top-0 lg:h-full ${
-          isOpen 
-            ? 'w-64 translate-x-0' 
+        className={`fixed top-16 bottom-0 left-0 z-50 bg-white dark:bg-gray-800 shadow-xl transform transition-all duration-300 ease-in-out lg:static lg:top-0 lg:h-full ${
+          isOpen
+            ? 'w-64 translate-x-0'
             : 'w-64 -translate-x-full lg:w-16 lg:translate-x-0'
         }`}
       >
-        <div className={`flex items-center h-16 border-b border-gray-200 ${isOpen ? 'justify-between px-4' : 'justify-center px-2'}`}>
+        <div className={`flex items-center h-16 border-b border-gray-200 dark:border-gray-700 ${isOpen ? 'justify-between px-4' : 'justify-center px-2'}`}>
           {isOpen && (
             <>
-              <h2 className="text-lg font-semibold text-gray-900 lg:hidden">메뉴</h2>
-              <h2 className="text-lg font-semibold text-gray-900 hidden lg:block">KRGeobuk</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 lg:hidden">메뉴</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 hidden lg:block">KRGeobuk</h2>
             </>
           )}
           <button
             onClick={onToggle}
-            className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+            className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             {isOpen ? (
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

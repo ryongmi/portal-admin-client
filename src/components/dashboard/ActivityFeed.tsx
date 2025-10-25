@@ -74,15 +74,15 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
   };
 
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/30 p-6">
+    <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/30 dark:border-gray-700/30 p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
           <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600">
             <Clock className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">최근 활동</h3>
-            <p className="text-sm text-gray-600">실시간 시스템 활동 로그</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">최근 활동</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">실시간 시스템 활동 로그</p>
           </div>
         </div>
       </div>
@@ -90,8 +90,8 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
       <div className="space-y-4">
         {displayActivities.length === 0 ? (
           <div className="text-center py-8">
-            <Clock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-500">최근 활동이 없습니다</p>
+            <Clock className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+            <p className="text-sm text-gray-500 dark:text-gray-400">최근 활동이 없습니다</p>
           </div>
         ) : (
           displayActivities.map((activity) => {
@@ -108,7 +108,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between">
-                    <p className="text-sm text-gray-900 break-words">
+                    <p className="text-sm text-gray-900 dark:text-gray-100 break-words">
                       {activity.description}
                     </p>
                     <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
@@ -117,7 +117,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
                   </div>
                   
                   <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
                       {formatTimeAgo(activity.timestamp)}
                     </span>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${

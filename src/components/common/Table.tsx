@@ -41,7 +41,7 @@ const Table = <T = Record<string, unknown>>({
   if (loading) {
     return (
       <div 
-        className="bg-white rounded-xl shadow-lg border border-gray-100"
+        className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100"
         role="status"
         aria-live="polite"
         aria-label="데이터 로딩 중"
@@ -51,7 +51,7 @@ const Table = <T = Record<string, unknown>>({
             className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"
             aria-hidden="true"
           ></div>
-          <p className="text-gray-600 font-medium">로딩 중...</p>
+          <p className="text-gray-600 dark:text-gray-400 font-medium">로딩 중...</p>
         </div>
       </div>
     );
@@ -60,7 +60,7 @@ const Table = <T = Record<string, unknown>>({
   if (data.length === 0) {
     return (
       <div 
-        className="bg-white rounded-xl shadow-lg border border-gray-100"
+        className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100"
         role="status"
         aria-live="polite"
         aria-label="데이터 없음"
@@ -82,14 +82,14 @@ const Table = <T = Record<string, unknown>>({
               />
             </svg>
           </div>
-          <p className="text-gray-600 font-medium">{emptyMessage}</p>
+          <p className="text-gray-600 dark:text-gray-400 font-medium">{emptyMessage}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 overflow-hidden">
       <div className="overflow-x-auto">
         <table 
           className="min-w-full divide-y divide-gray-200"
@@ -209,7 +209,7 @@ const Table = <T = Record<string, unknown>>({
               })}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-100">
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100">
             {data.map((row, index) => {
               // 안정적인 key 사용 (가능한 경우 ID 사용)
               const rowKey = (row as T & { id?: string | number })?.id || index;
@@ -248,7 +248,7 @@ const TableRow = <T,>({ row, columns, index }: TableRowProps<T>): JSX.Element =>
       return (
         <td
           key={cellKey}
-          className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center"
+          className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 text-center"
           role="cell"
           aria-describedby={`${column.label}-${index}`}
         >

@@ -43,16 +43,16 @@ export const ChartCard: React.FC<ChartCardProps> = ({ title, data, type: _type, 
   // 데이터가 없는 경우 처리
   if (!data || data.length === 0) {
     return (
-      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/30 p-6">
+      <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/30 dark:border-gray-700/30 p-6">
         <div className="flex items-center space-x-3 mb-6">
           <div className={`p-3 rounded-xl bg-gradient-to-br ${colors.gradient}`}>
             <BarChart3 className="w-6 h-6 text-white" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
         </div>
-        <div className="flex items-center justify-center h-48 text-gray-500">
+        <div className="flex items-center justify-center h-48 text-gray-500 dark:text-gray-400">
           <div className="text-center">
-            <BarChart3 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <BarChart3 className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
             <p className="text-sm">데이터가 없습니다</p>
           </div>
         </div>
@@ -73,15 +73,15 @@ export const ChartCard: React.FC<ChartCardProps> = ({ title, data, type: _type, 
       : 0;
 
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/30 p-6">
+    <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/30 dark:border-gray-700/30 p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
           <div className={`p-3 rounded-xl bg-gradient-to-br ${colors.gradient}`}>
             <BarChart3 className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-            <div className="flex items-center space-x-4 text-sm text-gray-600">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
+            <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
               <span>평균: {avgValue.toLocaleString()}</span>
               <div className="flex items-center space-x-1">
                 <TrendingUp
@@ -120,16 +120,16 @@ export const ChartCard: React.FC<ChartCardProps> = ({ title, data, type: _type, 
 
                     {/* 툴팁 */}
                     <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                      <div className="bg-gray-900 text-white text-xs rounded-lg px-2 py-1 whitespace-nowrap">
+                      <div className="bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg px-2 py-1 whitespace-nowrap">
                         {item.count.toLocaleString()}
-                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900" />
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700" />
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* 날짜 레이블 */}
-                <div className="mt-2 text-xs text-gray-500 text-center">
+                <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
                   {date.getMonth() + 1}/{date.getDate()}
                 </div>
               </div>
@@ -139,8 +139,8 @@ export const ChartCard: React.FC<ChartCardProps> = ({ title, data, type: _type, 
       </div>
 
       {/* 범례 */}
-      <div className="mt-4 pt-4 border-t border-gray-200">
-        <div className="flex items-center justify-between text-xs text-gray-500">
+      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <div className={`w-3 h-3 rounded bg-gradient-to-br ${colors.gradient}`} />

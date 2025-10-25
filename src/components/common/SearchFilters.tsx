@@ -64,10 +64,10 @@ const SearchFilters = memo<SearchFiltersProps>(function SearchFilters({ fields, 
   )
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
       <div className="flex flex-col space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium text-gray-900">검색 필터</h3>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">검색 필터</h3>
           {hasActiveFilters && (
             <Button size="sm" variant="outline" onClick={handleReset}>
               초기화
@@ -78,7 +78,7 @@ const SearchFilters = memo<SearchFiltersProps>(function SearchFilters({ fields, 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {fields.map((field) => (
             <div key={field.key} className="flex flex-col">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {field.label}
               </label>
               
@@ -88,7 +88,7 @@ const SearchFilters = memo<SearchFiltersProps>(function SearchFilters({ fields, 
                   value={String(filters[field.key] || '')}
                   onChange={(e) => handleFilterChange(field.key, e.target.value)}
                   placeholder={field.placeholder}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 />
               )}
               
@@ -96,7 +96,7 @@ const SearchFilters = memo<SearchFiltersProps>(function SearchFilters({ fields, 
                 <select
                   value={String(filters[field.key] || '')}
                   onChange={(e) => handleFilterChange(field.key, e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 >
                   <option value="">전체</option>
                   {field.options?.map((option) => (
@@ -111,7 +111,7 @@ const SearchFilters = memo<SearchFiltersProps>(function SearchFilters({ fields, 
                 <select
                   value={filters[field.key] === undefined ? '' : String(filters[field.key])}
                   onChange={(e) => handleFilterChange(field.key, e.target.value === '' ? undefined : e.target.value === 'true')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 >
                   <option value="">전체</option>
                   <option value="true">예</option>
