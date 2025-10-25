@@ -291,21 +291,21 @@ const RolePermissionModal = memo<RolePermissionModalProps>(function RolePermissi
         <div className="mx-6 mt-4 space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">권한 검색</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-white mb-1">권한 검색</label>
               <input
                 type="text"
                 placeholder="권한명이나 설명을 검색하세요..."
                 value={permissionSearch}
                 onChange={(e) => setPermissionSearch(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">서비스 필터</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-white mb-1">서비스 필터</label>
               <select
                 value={serviceFilter}
                 onChange={(e) => setServiceFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-100"
               >
                 <option value="">모든 서비스</option>
                 {availableServices.map((service) => (
