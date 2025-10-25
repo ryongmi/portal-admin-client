@@ -327,31 +327,31 @@ export default function ReduxServicesPage(): JSX.Element {
           )}
 
           {/* 검색 */}
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-600 p-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">서비스명</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">서비스명</label>
                 <input
                   type="text"
                   placeholder="서비스명을 입력하세요"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   value={nameInput}
                   onChange={(e) => setNameInput(e.target.value)}
                 />
               </div>
               {/* <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">표시명</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">표시명</label>
                 <input
                   type="text"
                   placeholder="표시명을 입력하세요"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   onChange={(e) => handleSearch({ ...searchQuery, displayName: e.target.value })}
                 />
               </div> */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">가시성</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">가시성</label>
                 <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 text-gray-900 dark:text-gray-100"
                   onChange={(e) => {
                     const value = e.target.value;
                     const newQuery: ServiceSearchQuery = { ...searchQuery };
