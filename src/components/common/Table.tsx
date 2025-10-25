@@ -111,7 +111,7 @@ const Table = <T = Record<string, unknown>>({
                 return (
                   <th
                     key={headerKey}
-                  className={`px-6 py-4 text-center text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider ${
+                  className={`px-6 py-4 text-center text-xs font-semibold text-gray-900 dark:text-gray-900 uppercase tracking-wider ${
                     column.sortable
                       ? 'cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-150 focus:bg-gray-200 dark:focus:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400'
                       : ''
