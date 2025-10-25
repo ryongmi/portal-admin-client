@@ -192,11 +192,11 @@ export default function ReduxPermissionsPage(): JSX.Element {
 
   // 액션 타입에 따른 배지 색상
   const getActionBadgeColor = (action: string): string => {
-    if (action.endsWith('.read')) return 'bg-blue-100 text-blue-800';
-    if (action.endsWith('.write')) return 'bg-green-100 text-green-800';
-    if (action.endsWith('.update')) return 'bg-yellow-100 text-yellow-800';
-    if (action.endsWith('.delete')) return 'bg-red-100 text-red-800';
-    return 'bg-gray-100 text-gray-800';
+    if (action.endsWith('.read')) return 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-700';
+    if (action.endsWith('.write')) return 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-700';
+    if (action.endsWith('.update')) return 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-700';
+    if (action.endsWith('.delete')) return 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-700';
+    return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600';
   };
 
   const _formatDate = (dateString: string): string => {
@@ -239,7 +239,7 @@ export default function ReduxPermissionsPage(): JSX.Element {
       render: (value: PermissionSearchResult[keyof PermissionSearchResult]): JSX.Element => {
         const service = value as PermissionSearchResult['service'];
         return (
-          <span className="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
+          <span className="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 border border-purple-200 dark:border-purple-700">
             {service?.name || '알 수 없음'}
           </span>
         );
@@ -263,7 +263,7 @@ export default function ReduxPermissionsPage(): JSX.Element {
             onClick={() => handleOpenDeleteModal(row)}
             isLoading={isActionsLoading('delete')}
             loadingText="삭제 중"
-            className="text-red-600 border-red-300 hover:bg-red-50"
+            className="text-red-600 dark:text-red-400 border-red-300 dark:border-red-600 hover:bg-red-50 dark:hover:bg-red-900/30"
           >
             삭제
           </LoadingButton>
@@ -330,22 +330,22 @@ export default function ReduxPermissionsPage(): JSX.Element {
           )}
 
           {/* 검색 */}
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-600 p-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">액션</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">액션</label>
                 <input
                   type="text"
                   placeholder="액션을 입력하세요 (예: user.read)"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   value={actionInput}
                   onChange={(e) => setActionInput(e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">서비스</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">서비스</label>
                 <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 text-gray-900 dark:text-gray-100"
                   onChange={(e) => {
                     const value = e.target.value;
                     const newQuery: PermissionSearchQuery = { ...searchQuery };

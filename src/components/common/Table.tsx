@@ -103,7 +103,7 @@ const Table = <T = Record<string, unknown>>({
               {caption}
             </caption>
           )}
-          <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+          <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800">
             <tr role="row">
               {columns.map((column, index) => {
                 // 안정적인 헤더 key 생성
@@ -111,9 +111,9 @@ const Table = <T = Record<string, unknown>>({
                 return (
                   <th
                     key={headerKey}
-                  className={`px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider ${
+                  className={`px-6 py-4 text-center text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider ${
                     column.sortable
-                      ? 'cursor-pointer hover:bg-gray-200 transition-colors duration-150 focus:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500'
+                      ? 'cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-150 focus:bg-gray-200 dark:focus:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400'
                       : ''
                   }`}
                   onClick={() => column.sortable && onSort && onSort(String(column.key))}
@@ -238,7 +238,7 @@ interface TableRowProps<T> {
 
 const TableRow = <T,>({ row, columns, index }: TableRowProps<T>): JSX.Element => (
   <tr
-    className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 focus-within:bg-blue-50"
+    className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-gray-700 dark:hover:to-gray-600 transition-all duration-200 focus-within:bg-blue-50 dark:focus-within:bg-gray-700"
     role="row"
     aria-rowindex={index + 1}
   >
