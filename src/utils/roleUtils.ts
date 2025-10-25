@@ -3,8 +3,10 @@ import { isAdminLevelRole, ADMIN_LEVEL_ROLES } from '@krgeobuk/core/constants';
 // Interface for user with possible role structures
 interface UserWithRoles {
   id: string;
-  roles?: Array<{ name?: string }>;
-  roleNames?: string[];
+  authorization?: {
+    roles?: string[];
+    permissions?: string[];
+  };
 }
 
 /**
@@ -19,14 +21,9 @@ export function hasAdminRole(user: UserWithRoles | null): boolean {
     return false;
   }
 
-  // Check if user has roles array
-  if (user.roles && Array.isArray(user.roles)) {
-    return user.roles.some((role: { name?: string }) => isAdminLevelRole(role.name || ''));
-  }
-
-  // Check if user has role names directly
-  if (user.roleNames && Array.isArray(user.roleNames)) {
-    return user.roleNames.some((roleName: string) => isAdminLevelRole(roleName));
+  // Check authorization.roles (현재 API 응답 구조)
+  if (user.authorization?.roles && Array.isArray(user.authorization.roles)) {
+    return user.authorization.roles.some((roleName: string) => isAdminLevelRole(roleName));
   }
 
   return false;
@@ -37,7 +34,5 @@ export function hasAdminRole(user: UserWithRoles | null): boolean {
  * @returns Array of admin role names from shared-lib constants
  */
 export function getAdminRoleNames(): string[] {
-  // Import dynamically to avoid circular dependencies
-  // const { ADMIN_LEVEL_ROLES } = require('@krgeobuk/core/constants');
   return [...ADMIN_LEVEL_ROLES];
 }

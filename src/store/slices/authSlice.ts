@@ -15,7 +15,7 @@ interface AuthState {
 const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
-  isLoading: false,
+  isLoading: true,  // ✅ 초기값을 true로 변경 (초기화 완료될 때까지 로딩)
   error: null,
   isInitialized: false,
 };
