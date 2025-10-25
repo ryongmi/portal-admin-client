@@ -91,16 +91,16 @@ const UserRoleModal = memo<UserRoleModalProps>(function UserRoleModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="역할 관리" size="xl">
       <div className="space-y-6">
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <p className="text-sm text-gray-600">
-            사용자: <strong className="text-gray-900">{user?.name}</strong> ({user?.email})
+        <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            사용자: <strong className="text-gray-900 dark:text-gray-100">{user?.name}</strong> ({user?.email})
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-6">
           {/* 현재 할당된 역할 */}
           <div>
-            <h4 className="font-medium text-gray-900 mb-3">현재 할당된 역할</h4>
+            <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3">현재 할당된 역할</h4>
             <div className="space-y-4 max-h-96 overflow-y-auto">
               {Array.from(rolesByService.entries()).map(([serviceId, serviceRoles]) => {
                 const assigned = serviceRoles.filter((role) => userRoles.includes(role.id));
@@ -108,25 +108,25 @@ const UserRoleModal = memo<UserRoleModalProps>(function UserRoleModal({
 
                 return (
                   <div key={serviceId} className="space-y-2">
-                    <h5 className="text-sm font-medium text-gray-700">
+                    <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       {getServiceName(serviceId)}
                     </h5>
                     {assigned.map((role) => (
                       <div
                         key={role.id}
-                        className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg"
                       >
                         <div>
-                          <p className="font-medium text-gray-900">{role.name}</p>
+                          <p className="font-medium text-gray-900 dark:text-gray-100">{role.name}</p>
                           {role.description && (
-                            <p className="text-sm text-gray-500">{role.description}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{role.description}</p>
                           )}
                         </div>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleRemove(role.id)}
-                          className="text-red-600 border-red-300 hover:bg-red-50"
+                          className="text-red-600 dark:text-red-400 border-red-300 dark:border-red-600 hover:bg-red-50 dark:hover:bg-red-900/30"
                         >
                           제거
                         </Button>
@@ -136,14 +136,14 @@ const UserRoleModal = memo<UserRoleModalProps>(function UserRoleModal({
                 );
               })}
               {assignedRoles.length === 0 && (
-                <p className="text-sm text-gray-500">할당된 역할이 없습니다</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">할당된 역할이 없습니다</p>
               )}
             </div>
           </div>
 
           {/* 할당 가능한 역할 */}
           <div>
-            <h4 className="font-medium text-gray-900 mb-3">할당 가능한 역할</h4>
+            <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3">할당 가능한 역할</h4>
             <div className="space-y-4 max-h-96 overflow-y-auto">
               {Array.from(rolesByService.entries()).map(([serviceId, serviceRoles]) => {
                 const available = serviceRoles.filter((role) => !userRoles.includes(role.id));
@@ -151,25 +151,25 @@ const UserRoleModal = memo<UserRoleModalProps>(function UserRoleModal({
 
                 return (
                   <div key={serviceId} className="space-y-2">
-                    <h5 className="text-sm font-medium text-gray-700">
+                    <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       {getServiceName(serviceId)}
                     </h5>
                     {available.map((role) => (
                       <div
                         key={role.id}
-                        className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg"
                       >
                         <div>
-                          <p className="font-medium text-gray-900">{role.name}</p>
+                          <p className="font-medium text-gray-900 dark:text-gray-100">{role.name}</p>
                           {role.description && (
-                            <p className="text-sm text-gray-500">{role.description}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{role.description}</p>
                           )}
                         </div>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleAssign(role.id)}
-                          className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                          className="text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
                         >
                           할당
                         </Button>
@@ -179,7 +179,7 @@ const UserRoleModal = memo<UserRoleModalProps>(function UserRoleModal({
                 );
               })}
               {availableRoles.length === 0 && (
-                <p className="text-sm text-gray-500">모든 역할이 이미 할당되었습니다</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">모든 역할이 이미 할당되었습니다</p>
               )}
             </div>
           </div>
