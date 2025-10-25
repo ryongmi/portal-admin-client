@@ -24,9 +24,10 @@
 import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { initializeAuth } from '@/store/slices/authSlice';
+import type { UserProfile } from '@krgeobuk/user/interfaces';
 
 export const useAuth = (): {
-  user: { id: string; email?: string; name?: string } | null;
+  user: UserProfile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;

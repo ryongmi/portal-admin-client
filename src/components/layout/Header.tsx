@@ -2,8 +2,10 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { ThemeToggle } from '@/components/common/ThemeToggle'
+import { useAuth } from '@/hooks/useAuth'
 
 interface HeaderProps {
   onMenuToggle: () => void
@@ -11,6 +13,7 @@ interface HeaderProps {
 
 export default function Header({ onMenuToggle }: HeaderProps): JSX.Element {
   const _router = useRouter()
+  const { user, isLoading } = useAuth()
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
 
@@ -73,24 +76,48 @@ export default function Header({ onMenuToggle }: HeaderProps): JSX.Element {
           
           {/* 사용자 정보 및 테마 토글 */}
           <div className="flex items-center space-x-4">
-            <div className="hidden md:block">
-              <span className="text-sm text-gray-600 dark:text-gray-300 transition-colors duration-200">관리자</span>
-            </div>
-            
             {/* 테마 토글 */}
             <ThemeToggle variant="icon" size="md" />
-            
-            <div className="relative" ref={userMenuRef}>
-              <button
-                onClick={toggleUserMenu}
-                className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                aria-expanded={isUserMenuOpen}
-                aria-haspopup="true"
-              >
-                <svg className="h-5 w-5 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </button>
+
+            {/* 로딩 상태 */}
+            {isLoading ? (
+              <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+            ) : (
+              /* 로그인 상태: 프로필 아이콘 + 드롭다운 */
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={toggleUserMenu}
+                  className="rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+                  aria-expanded={isUserMenuOpen}
+                  aria-haspopup="true"
+                  aria-label="사용자 메뉴"
+                >
+                  {user?.profileImageUrl ? (
+                    <Image
+                      src={user.profileImageUrl}
+                      alt={user.name || '사용자'}
+                      width={40}
+                      height={40}
+                      className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 transition-colors duration-200"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center border-2 border-gray-200 dark:border-gray-600 transition-colors duration-200">
+                      <svg
+                        className="h-6 w-6 text-gray-600 dark:text-gray-300"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
+                      </svg>
+                    </div>
+                  )}
+                </button>
 
               {/* 드롭다운 메뉴 */}
               {isUserMenuOpen && (
@@ -99,16 +126,28 @@ export default function Header({ onMenuToggle }: HeaderProps): JSX.Element {
                   <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                     <div className="flex items-center space-x-3">
                       <div className="flex-shrink-0">
-                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-sm font-medium">관</span>
-                        </div>
+                        {user?.profileImageUrl ? (
+                          <Image
+                            src={user.profileImageUrl}
+                            alt={user.name || '사용자'}
+                            width={32}
+                            height={32}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                            <span className="text-white text-sm font-medium">
+                              {user?.name?.charAt(0) || '관'}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                          관리자
+                          {user?.name || '관리자'}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                          admin@krgeobuk.com
+                          {user?.email || 'admin@krgeobuk.com'}
                         </p>
                       </div>
                     </div>
@@ -153,7 +192,8 @@ export default function Header({ onMenuToggle }: HeaderProps): JSX.Element {
                   </div>
                 </div>
               )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
