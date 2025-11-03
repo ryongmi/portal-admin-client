@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { AuthService } from '@/services/authService';
+import { authService } from '@/services/authService';
 import type { UserProfile } from '@krgeobuk/user/interfaces';
 
 // import type { User } from '@/types';
@@ -23,7 +23,7 @@ const initialState: AuthState = {
 // 로그아웃 비동기 액션
 export const logoutUser = createAsyncThunk('auth/logout', async (_, { rejectWithValue }) => {
   try {
-    await AuthService.logout();
+    await authService.logout();
     return null;
   } catch (error: unknown) {
     const axiosError = error as { response?: { data?: { message?: string } } };
@@ -36,7 +36,7 @@ export const fetchUserProfile = createAsyncThunk(
   'auth/fetchUserProfile',
   async (_, { rejectWithValue }) => {
     try {
-      return await AuthService.getCurrentUser();
+      return await authService.getCurrentUser();
     } catch (error: unknown) {
       const axiosError = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(
@@ -52,7 +52,7 @@ export const initializeAuth = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       // /auth/initialize API 호출 (RefreshToken으로 AccessToken + 사용자 정보 반환)
-      const { accessToken, user, isLogin } = await AuthService.initialize();
+      const { accessToken, user, isLogin } = await authService.initialize();
       return { accessToken, user, isLogin };
     } catch (error: unknown) {
       // 인증 실패 (RefreshToken이 없거나 만료됨)
