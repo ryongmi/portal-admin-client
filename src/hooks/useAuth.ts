@@ -2,7 +2,6 @@ import { useAuthStore } from '@/store/authStore';
 import { useAuthInitialize } from '@/hooks/queries/auth';
 import type { UserProfile } from '@krgeobuk/user/interfaces';
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export const useAuth = (): {
   user: UserProfile | null;
   isAuthenticated: boolean;

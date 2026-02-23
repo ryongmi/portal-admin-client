@@ -1,8 +1,7 @@
 import { portalApi } from '@/lib/httpClient';
 import { BaseService } from './base';
 import type {
-  Service,
-  // ServiceSearchResult,
+  ServiceSearchResult,
   ServiceDetail,
   ServiceSearchQuery,
   CreateServiceRequest,
@@ -19,9 +18,9 @@ export class ServiceService extends BaseService {
   /**
    * 서비스 목록 조회 (페이지네이션, 검색)
    */
-  async getServices(query: ServiceSearchQuery = {}): Promise<PaginatedResult<Service>> {
+  async getServices(query: ServiceSearchQuery = {}): Promise<PaginatedResult<ServiceSearchResult>> {
     try {
-      const response = await portalApi.get<PaginatedResult<Service>>('/services', {
+      const response = await portalApi.get<PaginatedResult<ServiceSearchResult>>('/services', {
         params: query,
       });
       return response.data;

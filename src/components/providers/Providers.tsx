@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState, useEffect } from 'react';
 import { AuthProvider } from '@/context/AuthContext';
-import ThemeInitializer from '@/components/common/ThemeInitializer';
+import { ThemeInitializer } from '@/components/common/ThemeInitializer';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
 import ToastContainer, { toast } from '@/components/common/ToastContainer';
 

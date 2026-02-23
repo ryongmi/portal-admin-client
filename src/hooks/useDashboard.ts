@@ -1,21 +1,20 @@
 import { useEffect, useCallback, useMemo } from 'react';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchUsers } from '@/store/slices/userSlice';
-import { fetchRoles } from '@/store/slices/roleSlice';
-import { fetchPermissions } from '@/store/slices/permissionSlice';
+import { useQueryClient } from '@tanstack/react-query';
+import { useUsers } from '@/hooks/queries/users';
+import { useRoles } from '@/hooks/queries/roles';
+import { usePermissions } from '@/hooks/queries/permissions';
+import { queryKeys } from '@/hooks/queries/keys';
+import { LimitType } from '@krgeobuk/core/enum';
 import type { DashboardStatistics } from '@/services/dashboardService';
 
 /**
- * useDashboard Hook - Redux Slice 조합 패턴
+ * useDashboard Hook - react-query 기반 대시보드 통계
  *
  * 특징:
- * - 기존 userSlice, roleSlice, permissionSlice의 데이터를 조합
- * - 별도의 dashboardSlice 없이 selector로 통계 계산
- * - 실시간 업데이트: 각 slice 데이터 변경 시 자동 반영
- * - Redux를 통해 데이터 페칭 (아키텍처 준수)
- *
- * 아키텍처:
- * Dashboard Page → useDashboard Hook → Redux Slices (user/role/permission) → Services → API
+ * - useUsers, useRoles, usePermissions 쿼리 조합
+ * - useMemo로 통계 데이터 계산
+ * - queryClient.invalidateQueries로 수동 새로고침
+ * - 자동 새로고침: 5분 / 30초 인터벌
  */
 export const useDashboard = (): {
   statistics: DashboardStatistics | null;
@@ -26,58 +25,38 @@ export const useDashboard = (): {
   refreshStatistics: () => Promise<void>;
   getSystemHealth: () => Promise<void>;
 } => {
-  const dispatch = useAppDispatch();
+  const queryClient = useQueryClient();
 
-  // 각 slice에서 데이터 가져오기
-  const {
-    users,
-    pagination: userPagination,
-    isLoading: userLoading,
-    error: userError,
-  } = useAppSelector((state) => state.user);
+  const { data: usersData, isPending: userLoading, error: userError } = useUsers({ page: 1, limit: LimitType.HUNDRED });
+  const { data: rolesData, isPending: roleLoading, error: roleError } = useRoles({ page: 1, limit: LimitType.HUNDRED });
+  const { data: permissionsData, isPending: permissionLoading, error: permissionError } = usePermissions({ page: 1, limit: LimitType.HUNDRED });
 
-  const {
-    roles,
-    pagination: rolePagination,
-    isLoading: roleLoading,
-    error: roleError,
-  } = useAppSelector((state) => state.role);
+  const users = usersData?.items ?? [];
+  const roles = rolesData?.items ?? [];
+  const permissions = permissionsData?.items ?? [];
 
-  const {
-    permissions,
-    pagination: permissionPagination,
-    isLoading: permissionLoading,
-    error: permissionError,
-  } = useAppSelector((state) => state.permission);
-
-  // 초기 데이터 로드
-  useEffect(() => {
-    dispatch(fetchUsers({ page: 1, limit: 100 }));
-    dispatch(fetchRoles({ page: 1, limit: 100 }));
-    dispatch(fetchPermissions({ page: 1, limit: 100 }));
-  }, [dispatch]);
+  const userPagination = usersData?.pageInfo;
+  const rolePagination = rolesData?.pageInfo;
+  const permissionPagination = permissionsData?.pageInfo;
 
   // 통계 계산 (useMemo로 최적화)
   const statistics = useMemo((): DashboardStatistics | null => {
-    // 데이터가 로딩 중이면 null 반환
     if (userLoading && users.length === 0) return null;
     if (roleLoading && roles.length === 0) return null;
     if (permissionLoading && permissions.length === 0) return null;
 
-    // 사용자 통계 계산
     const userStats = {
-      total: userPagination.totalItems,
+      total: userPagination?.totalItems ?? 0,
       active: users.filter((u) => u.isIntegrated).length,
       inactive: users.filter((u) => !u.isIntegrated).length,
       emailVerified: users.filter((u) => u.isEmailVerified).length,
       recentRegistrations: users.filter((u) => {
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
-        return new Date(u.oauthAccount.createdAt ?? '') > weekAgo;
+        return new Date(u.oauthAccount?.createdAt ?? '') > weekAgo;
       }).length,
     };
 
-    // 역할 통계 계산
     const rolesByService = roles.reduce(
       (acc, role) => {
         const serviceName = role.service?.displayName || 'unknown';
@@ -88,12 +67,11 @@ export const useDashboard = (): {
     );
 
     const roleStats = {
-      total: rolePagination.totalItems,
+      total: rolePagination?.totalItems ?? 0,
       byService: rolesByService,
       avgPermissionsPerRole: Math.round(permissions.length / Math.max(roles.length, 1)),
     };
 
-    // 권한 통계 계산
     const permissionsByService = permissions.reduce(
       (acc, permission) => {
         const serviceName = permission.service?.displayName || 'unknown';
@@ -104,11 +82,10 @@ export const useDashboard = (): {
     );
 
     const permissionStats = {
-      total: permissionPagination.totalItems,
+      total: permissionPagination?.totalItems ?? 0,
       byService: permissionsByService,
     };
 
-    // Mock Analytics 데이터 (향후 실제 API로 교체 예정)
     const analytics = getDefaultAnalytics();
 
     return {
@@ -132,29 +109,29 @@ export const useDashboard = (): {
   // 통계 새로고침
   const fetchStatistics = useCallback(async (): Promise<void> => {
     await Promise.all([
-      dispatch(fetchUsers({ page: 1, limit: 100 })).unwrap(),
-      dispatch(fetchRoles({ page: 1, limit: 100 })).unwrap(),
-      dispatch(fetchPermissions({ page: 1, limit: 100 })).unwrap(),
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.roles.all() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.permissions.all() }),
     ]);
-  }, [dispatch]);
+  }, [queryClient]);
 
-  // 시스템 헬스 체크 (간단한 API 호출로 서버 상태 확인)
+  // 시스템 헬스 체크
   const getSystemHealth = useCallback(async (): Promise<void> => {
     try {
       await Promise.allSettled([
-        dispatch(fetchUsers({ page: 1, limit: 15 })).unwrap(),
-        dispatch(fetchRoles({ page: 1, limit: 15 })).unwrap(),
+        queryClient.invalidateQueries({ queryKey: queryKeys.users.all() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.roles.all() }),
       ]);
     } catch {
       // Health check errors are expected and handled gracefully
     }
-  }, [dispatch]);
+  }, [queryClient]);
 
-  // 자동 새로고침 설정 (5분마다)
+  // 자동 새로고침 (5분마다)
   useEffect(() => {
     const interval = setInterval(() => {
-      fetchStatistics();
-    }, 5 * 60 * 1000); // 5분
+      void fetchStatistics();
+    }, 5 * 60 * 1000);
 
     return (): void => clearInterval(interval);
   }, [fetchStatistics]);
@@ -162,14 +139,20 @@ export const useDashboard = (): {
   // 시스템 상태 자동 새로고침 (30초마다)
   useEffect(() => {
     const healthInterval = setInterval(() => {
-      getSystemHealth();
-    }, 30 * 1000); // 30초
+      void getSystemHealth();
+    }, 30 * 1000);
 
     return (): void => clearInterval(healthInterval);
   }, [getSystemHealth]);
 
   const loading = userLoading || roleLoading || permissionLoading;
-  const error = userError || roleError || permissionError;
+  const error = userError
+    ? String(userError)
+    : roleError
+      ? String(roleError)
+      : permissionError
+        ? String(permissionError)
+        : null;
 
   return {
     statistics,
@@ -184,7 +167,7 @@ export const useDashboard = (): {
 
 /**
  * 기본 Analytics 데이터 생성 (Mock)
- * TODO: 실제 Analytics API가 구현되면 별도 slice로 분리
+ * TODO: 실제 Analytics API가 구현되면 별도 훅으로 분리
  */
 function getDefaultAnalytics(): DashboardStatistics['analytics'] {
   const now = new Date();
@@ -196,7 +179,7 @@ function getDefaultAnalytics(): DashboardStatistics['analytics'] {
       date.setDate(date.getDate() - (days - 1 - i));
       return {
         date: date.toISOString().split('T')[0]!,
-        count: Math.floor(Math.random() * 50) + 10, // Mock 데이터
+        count: Math.floor(Math.random() * 50) + 10,
       };
     }),
     loginTrends: Array.from({ length: days }, (_, i) => {
@@ -204,8 +187,8 @@ function getDefaultAnalytics(): DashboardStatistics['analytics'] {
       date.setDate(date.getDate() - (days - 1 - i));
       return {
         date: date.toISOString().split('T')[0]!,
-        logins: Math.floor(Math.random() * 100) + 20, // Mock 데이터
-        failures: Math.floor(Math.random() * 10), // Mock 데이터
+        logins: Math.floor(Math.random() * 100) + 20,
+        failures: Math.floor(Math.random() * 10),
       };
     }),
     topRoles: [

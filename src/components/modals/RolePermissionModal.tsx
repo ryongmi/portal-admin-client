@@ -1,32 +1,17 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, memo } from 'react';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import {
-  fetchPermissions,
-  clearError,
-  fetchRolePermissions,
-  replaceRolePermissions,
-} from '@/store/slices/permissionSlice';
+import { usePermissions } from '@/hooks/queries/permissions';
+import { useRolePermissions } from '@/hooks/queries/permissions';
+import { useReplaceRolePermissions } from '@/hooks/mutations/permissions';
+import { LimitType } from '@krgeobuk/core/enum';
 import Modal from '@/components/common/Modal';
 import Button from '@/components/common/Button';
 import LoadingButton from '@/components/common/LoadingButton';
 import LoadingOverlay from '@/components/common/LoadingOverlay';
 import { toast } from '@/components/common/ToastContainer';
-import { useLoadingState } from '@/hooks/useLoadingState';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
-import type { RoleDetail, PermissionSearchResult, PermissionDetail } from '@/types';
-
-// PermissionSearchResult를 PermissionDetail로 안전하게 변환하는 함수
-const _convertToPermissionDetail = (permission: PermissionSearchResult): PermissionDetail => ({
-  id: permission.id,
-  action: permission.action,
-  description: permission.description,
-  service: permission.service,
-  roles: [], // PermissionSearchResult에는 roles 정보가 없으므로 빈 배열로 초기화
-  createdAt: new Date(),
-  updatedAt: new Date(),
-});
+import type { RoleDetail, PermissionSearchResult } from '@/types';
 
 interface RolePermissionModalProps {
   isOpen: boolean;
@@ -39,67 +24,41 @@ const RolePermissionModal = memo<RolePermissionModalProps>(function RolePermissi
   onClose,
   role,
 }) {
-  const dispatch = useAppDispatch();
-  const { permissions, isLoading, error } = useAppSelector((state) => state.permission);
-
-  // 로컬 상태
-  const [currentRolePermissions, setCurrentRolePermissions] = useState<PermissionDetail[]>([]);
   const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(new Set());
   const [permissionSearch, setPermissionSearch] = useState('');
   const [serviceFilter, setServiceFilter] = useState<string>('');
 
-  // 로딩 상태 관리
-  const { isLoading: isActionsLoading, withLoading } = useLoadingState();
-
-  // 에러 핸들러
   const { handleApiError } = useErrorHandler();
 
-  // 권한 데이터 로드
+  const roleId = isOpen ? (role?.id ?? null) : null;
+
+  const { data: permissionsData, isPending: isPermissionsLoading } = usePermissions({ limit: LimitType.HUNDRED });
+  const { data: rolePermissionsData, isPending: isRolePermissionsLoading } = useRolePermissions(roleId);
+
+  const allPermissions = permissionsData?.items ?? [];
+  const isLoading = isPermissionsLoading || isRolePermissionsLoading;
+
+  const replacePermissionsMutation = useReplaceRolePermissions();
+
+  // 역할 권한 데이터가 로드되면 선택 상태 초기화
   useEffect(() => {
-    if (isOpen) {
-      dispatch(fetchPermissions({}));
+    if (rolePermissionsData !== undefined) {
+      setSelectedPermissions(new Set(rolePermissionsData));
     }
-  }, [isOpen, dispatch]);
+  }, [rolePermissionsData]);
 
-  // 권한 목록이 로드된 후 역할 권한 로드
+  // 모달 닫힐 때 상태 초기화
   useEffect(() => {
-    if (isOpen && role && permissions.length > 0) {
-      loadRolePermissions(role.id!);
+    if (!isOpen) {
+      setSelectedPermissions(new Set());
+      setPermissionSearch('');
+      setServiceFilter('');
     }
-  }, [isOpen, role, permissions]);
-
-  // PermissionSearchResult를 PermissionDetail로 변환하는 헬퍼 함수
-  const _convertToPermissionDetailCallback = useCallback((searchResult: PermissionSearchResult): PermissionDetail => {
-    return {
-      id: searchResult.id,
-      action: searchResult.action,
-      description: searchResult.description,
-      service: searchResult.service,
-      roles: [], // PermissionSearchResult에는 roles 정보가 없으므로 빈 배열로 초기화
-    };
-  }, []);
-
-  // 역할의 현재 권한 로드
-  const loadRolePermissions = async (roleId: string): Promise<void> => {
-    try {
-      // Redux dispatch 사용하여 권한 목록 조회
-      const permissionIds = await dispatch(fetchRolePermissions(roleId)).unwrap();
-
-      // 권한 ID 목록을 기반으로 실제 권한 정보 매핑 및 타입 변환
-      const rolePermissions = permissions
-        .filter(p => permissionIds.includes(p.id!))
-        .map(_convertToPermissionDetail);
-
-      setCurrentRolePermissions(rolePermissions);
-      setSelectedPermissions(new Set(permissionIds));
-    } catch (error) {
-      handleApiError(error);
-    }
-  };
+  }, [isOpen]);
 
   // 서비스별 권한 그룹화
   const groupedPermissions = useMemo(() => {
-    const filtered = permissions.filter(permission => {
+    const filtered = allPermissions.filter(permission => {
       const matchesSearch = permission.action.toLowerCase().includes(permissionSearch.toLowerCase()) ||
                            permission.description?.toLowerCase().includes(permissionSearch.toLowerCase());
       const matchesService = !serviceFilter || permission.service?.id === serviceFilter;
@@ -114,20 +73,20 @@ const RolePermissionModal = memo<RolePermissionModalProps>(function RolePermissi
       acc[serviceName].push(permission);
       return acc;
     }, {} as Record<string, PermissionSearchResult[]>);
-  }, [permissions, permissionSearch, serviceFilter]);
+  }, [allPermissions, permissionSearch, serviceFilter]);
 
   // 사용 가능한 서비스 목록
   const availableServices = useMemo(() => {
-    const services = permissions.reduce((acc, permission) => {
+    const services = allPermissions.reduce((acc, permission) => {
       if (permission.service && permission.service.name && !acc.find(s => s.id === permission.service!.id)) {
         acc.push({ id: permission.service.id, name: permission.service.name });
       }
       return acc;
     }, [] as Array<{ id: string; name: string }>);
     return services.sort((a, b) => a.name.localeCompare(b.name));
-  }, [permissions]);
+  }, [allPermissions]);
 
-  // 권한 선택/해제 (useCallback으로 최적화)
+  // 권한 선택/해제
   const handlePermissionToggle = useCallback((permissionId: string) => {
     setSelectedPermissions(prev => {
       const newSelected = new Set(prev);
@@ -140,12 +99,12 @@ const RolePermissionModal = memo<RolePermissionModalProps>(function RolePermissi
     });
   }, []);
 
-  // 서비스별 전체 선택/해제 (useCallback으로 최적화)
+  // 서비스별 전체 선택/해제
   const handleServiceToggle = useCallback((serviceName: string) => {
     const servicePermissions = groupedPermissions[serviceName];
     if (!servicePermissions) return;
     const allSelected = servicePermissions.every(p => selectedPermissions.has(p.id!));
-    
+
     setSelectedPermissions(prev => {
       const newSelected = new Set(prev);
       if (allSelected) {
@@ -163,7 +122,7 @@ const RolePermissionModal = memo<RolePermissionModalProps>(function RolePermissi
       .flat()
       .map(p => p.id!);
     const allSelected = allPermissionIds.every(id => selectedPermissions.has(id));
-    
+
     if (allSelected) {
       setSelectedPermissions(new Set());
     } else {
@@ -172,46 +131,29 @@ const RolePermissionModal = memo<RolePermissionModalProps>(function RolePermissi
   };
 
   // 변경사항 저장
-  const handleSave = withLoading('save', async () => {
+  const handleSave = async (): Promise<void> => {
     if (!role) return;
-
     try {
-      const newPermissionIds = Array.from(selectedPermissions);
-      // Redux dispatch 사용하여 권한 교체
-      await dispatch(replaceRolePermissions({
+      await replacePermissionsMutation.mutateAsync({
         roleId: role.id!,
-        permissionIds: newPermissionIds
-      })).unwrap();
-
+        permissionIds: Array.from(selectedPermissions),
+      });
       toast.success('권한 업데이트 완료', `${role.name} 역할의 권한이 성공적으로 업데이트되었습니다.`);
       onClose();
-    } catch (error) {
-      handleApiError(error);
+    } catch (err) {
+      handleApiError(err);
     }
-  });
+  };
 
   // 모달 닫기
   const handleClose = (): void => {
-    setPermissionSearch('');
-    setServiceFilter('');
-    setSelectedPermissions(new Set());
-    setCurrentRolePermissions([]);
-    dispatch(clearError());
     onClose();
   };
 
-  // 에러 처리
-  useEffect(() => {
-    if (error) {
-      // Permission error logged for debugging
-      setTimeout(() => dispatch(clearError()), 5000);
-    }
-  }, [error, dispatch]);
-
   if (!role) return <></>;
 
-  const currentPermissionIds = new Set(currentRolePermissions.map(p => p.id!));
-  const hasChanges = 
+  const currentPermissionIds = new Set(rolePermissionsData ?? []);
+  const hasChanges =
     selectedPermissions.size !== currentPermissionIds.size ||
     Array.from(selectedPermissions).some(id => !currentPermissionIds.has(id));
 
@@ -244,20 +186,6 @@ const RolePermissionModal = memo<RolePermissionModalProps>(function RolePermissi
             </div>
           </div>
         </div>
-
-        {/* 에러 메시지 */}
-        {error && (
-          <div className="mx-6 mt-4 bg-red-50 border border-red-200 rounded-lg p-3">
-            <div className="flex">
-              <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div className="ml-3">
-                <p className="text-sm text-red-800">{error}</p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* 통계 정보 */}
         <div className="mx-6 mt-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4 border border-green-200">
@@ -366,8 +294,8 @@ const RolePermissionModal = memo<RolePermissionModalProps>(function RolePermissi
                           variant="outline"
                           onClick={() => handleServiceToggle(serviceName)}
                           className={`${
-                            allSelected 
-                              ? 'text-red-600 border-red-300 hover:bg-red-50' 
+                            allSelected
+                              ? 'text-red-600 border-red-300 hover:bg-red-50'
                               : 'text-blue-600 border-blue-300 hover:bg-blue-50'
                           }`}
                         >
@@ -411,16 +339,16 @@ const RolePermissionModal = memo<RolePermissionModalProps>(function RolePermissi
         {/* 액션 버튼 */}
         <div className="px-6 py-4 bg-gray-50 rounded-b-lg border-t border-gray-100 mt-4">
           <div className="flex justify-end space-x-3">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={handleClose}
-              disabled={isActionsLoading('save')}
+              disabled={replacePermissionsMutation.isPending}
             >
               취소
             </Button>
             <LoadingButton
               onClick={handleSave}
-              isLoading={isActionsLoading('save')}
+              isLoading={replacePermissionsMutation.isPending}
               loadingText="저장 중..."
               disabled={!hasChanges}
               className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"

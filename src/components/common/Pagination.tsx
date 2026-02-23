@@ -3,12 +3,13 @@ import type { PaginatedResultBase } from '@krgeobuk/core/interfaces';
 import Button from './Button'
 
 interface PaginationProps {
-  pageInfo: PaginatedResultBase
+  pageInfo?: PaginatedResultBase | undefined
   onPageChange: (page: number) => void
   onLimitChange: (limit: LimitType) => void
 }
 
-export default function Pagination({ pageInfo, onPageChange, onLimitChange }: PaginationProps): JSX.Element {
+export default function Pagination({ pageInfo, onPageChange, onLimitChange }: PaginationProps): JSX.Element | null {
+  if (!pageInfo) return null;
   const { page, limit, totalItems, totalPages, hasPreviousPage, hasNextPage } = pageInfo
 
   const generatePageNumbers = (): number[] => {
