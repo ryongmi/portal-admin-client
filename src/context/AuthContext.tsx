@@ -1,13 +1,15 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useRef } from 'react';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { logoutUser, fetchUserProfile, initializeAuth, clearUser } from '@/store/slices/authSlice';
-import { tokenManager } from '@/lib/httpClient';
-import type { User } from '@/types';
+import React, { createContext, useContext, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '@/store/authStore';
+import { useAuthInitialize, useMyProfile } from '@/hooks/queries/auth';
+import { useLogout } from '@/hooks/mutations/auth';
+import { queryKeys } from '@/hooks/queries/keys';
+import type { UserProfile } from '@krgeobuk/user/interfaces';
 
 interface AuthContextType {
-  user: User | null;
+  user: UserProfile | null;
   loading: boolean;
   isLoggedIn: boolean;
   error: string | null;
@@ -17,84 +19,48 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }): JSX.Element {
-  const dispatch = useAppDispatch();
-  const { user, isAuthenticated, isLoading, error, isInitialized } = useAppSelector(
-    (state) => state.auth
-  );
-  const initializeRef = useRef(false);
+export function AuthProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
+  const queryClient = useQueryClient();
+  const { setAuthenticated, setInitialized, clearAuth, isAuthenticated } = useAuthStore();
+  const logoutMutation = useLogout();
+  const initQuery = useAuthInitialize();
+  const profileQuery = useMyProfile();
 
-  // 초기 인증 상태 확인 (쿠키 기반)
+  // 초기화 결과에 따라 Zustand 상태 업데이트
   useEffect(() => {
-    const checkInitialAuth = async (): Promise<void> => {
-      // 이미 초기화되었거나 진행 중이면 스킵 (StrictMode 대응)
-      if (isInitialized || isLoading || initializeRef.current) {
-        return;
-      }
+    if (initQuery.isSuccess) {
+      const { isLogin, user } = initQuery.data;
+      setAuthenticated(!!(isLogin && user));
+      setInitialized(true);
+    } else if (initQuery.isError) {
+      setAuthenticated(false);
+      setInitialized(true);
+    }
+  }, [initQuery.isSuccess, initQuery.isError, initQuery.data, setAuthenticated, setInitialized]);
 
-      initializeRef.current = true;
-
-      try {
-        await dispatch(initializeAuth()).unwrap();
-      } catch (_error) {
-        // 인증되지 않은 사용자
-      } finally {
-        // 초기화 완료 후 플래그 해제
-        initializeRef.current = false;
-      }
-    };
-
-    // TokenManager 이벤트 리스너 설정
-    const handleTokenCleared = (): void => {
-      dispatch(clearUser());
-    };
-
-    // const handleTokenUpdated = (event: CustomEvent): void => {
-    //   // 새 토큰이 설정되면 사용자 정보 갱신
-    //   if (event.detail?.accessToken && !user) {
-    //     dispatch(fetchUserProfile());
-    //   }
-    // };
-
-    // 이벤트 리스너 등록
+  // 토큰 강제 만료 이벤트 처리
+  useEffect(() => {
+    const handleTokenCleared = (): void => clearAuth();
     window.addEventListener('tokenCleared', handleTokenCleared);
-    // window.addEventListener('tokenUpdated', handleTokenUpdated as EventListener);
+    return (): void => window.removeEventListener('tokenCleared', handleTokenCleared);
+  }, [clearAuth]);
 
-    // 초기 인증 확인
-    checkInitialAuth();
-
-    return (): void => {
-      window.removeEventListener('tokenCleared', handleTokenCleared);
-      // window.removeEventListener('tokenUpdated', handleTokenUpdated as EventListener);
-    };
-  }, [dispatch, isInitialized, isLoading, user]);
-
-  // 로그아웃
   const logout = async (): Promise<void> => {
-    try {
-      await dispatch(logoutUser()).unwrap();
-    } catch (_error) {
-      // 로그아웃 실패 오류 로그
-      // 로그아웃 실패해도 클라이언트 상태는 초기화
-      dispatch(clearUser());
-      tokenManager.clearAccessToken();
-    }
+    await logoutMutation.mutateAsync();
   };
 
-  // 사용자 정보 새로고침
   const refreshUser = async (): Promise<void> => {
-    try {
-      await dispatch(fetchUserProfile()).unwrap();
-    } catch (_error) {
-      // 사용자 정보 새로고침 실패 오류 로그
-    }
+    await queryClient.invalidateQueries({ queryKey: queryKeys.auth.myProfile() });
   };
+
+  // profileQuery 우선, 없으면 initQuery 데이터 사용
+  const user = profileQuery.data ?? initQuery.data?.user ?? null;
 
   const value: AuthContextType = {
     user,
-    loading: isLoading,
+    loading: initQuery.isPending,
     isLoggedIn: isAuthenticated,
-    error,
+    error: initQuery.error ? String(initQuery.error) : null,
     logout,
     refreshUser,
   };
@@ -102,10 +68,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }): JSX.E
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function useAuth(): AuthContextType {
+export function useAuthContext(): AuthContextType {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuthContext must be used within an AuthProvider');
   }
   return context;
 }
