@@ -2,11 +2,9 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { Provider } from 'react-redux';
 import { useState, useEffect } from 'react';
-import { store } from '@/store';
 import { AuthProvider } from '@/context/AuthContext';
-import { ThemeProvider } from '@/context/ThemeContext';
+import ThemeInitializer from '@/components/common/ThemeInitializer';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
 import ToastContainer, { toast } from '@/components/common/ToastContainer';
 
@@ -84,14 +82,11 @@ export function Providers({ children }: ProvidersProps): React.JSX.Element {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <Provider store={store}>
-            <AuthProvider>
-              {children}
-              <ToastContainer position="top-right" maxToasts={5} />
-            </AuthProvider>
-          </Provider>
-        </ThemeProvider>
+        <ThemeInitializer />
+        <AuthProvider>
+          {children}
+          <ToastContainer position="top-right" maxToasts={5} />
+        </AuthProvider>
         {process.env.NODE_ENV === 'development' && (
           <ReactQueryDevtools initialIsOpen={false} />
         )}

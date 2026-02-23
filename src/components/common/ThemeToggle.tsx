@@ -1,6 +1,6 @@
 'use client';
 
-import { useTheme } from '@/context/ThemeContext';
+import { useThemeStore } from '@/store/themeStore';
 import { Sun, Moon, Monitor } from 'lucide-react';
 import { useState } from 'react';
 
@@ -13,7 +13,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
   variant = 'icon', 
   size = 'md' 
 }) => {
-  const { theme, actualTheme, setTheme, toggleTheme } = useTheme();
+  const { theme, actualTheme, setTheme, toggleTheme } = useThemeStore();
   const [isOpen, setIsOpen] = useState(false);
 
   const iconSize = {

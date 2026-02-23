@@ -2,6 +2,7 @@
 
 import { useEffect, ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useAuthStore } from '@/store/authStore';
 import { hasAdminRole } from '@/utils/roleUtils';
 
 interface AdminAuthGuardProps {
@@ -10,6 +11,7 @@ interface AdminAuthGuardProps {
 
 export const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
   const { isAuthenticated, user, isLoading } = useAuth();
+  const { isInitialized } = useAuthStore();
 
   useEffect(() => {
     // 로딩 중일 때는 아무것도 하지 않음
@@ -33,8 +35,8 @@ export const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
     }
   }, [isAuthenticated, user, isLoading]);
 
-  // 로딩 중이거나 인증되지 않은 상태에서는 로딩 화면 표시
-  if (isLoading || !isAuthenticated) {
+  // 초기화 전이거나 로딩 중이거나 인증되지 않은 상태에서는 로딩 화면 표시
+  if (!isInitialized || isLoading || !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
         <div className="text-center">
