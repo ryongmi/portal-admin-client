@@ -1,10 +1,10 @@
-# portal-admin-client 상태관리 리팩토링 계획
+# portal-admin-client 상태관리 리팩토링
 
 ## 개요
 
-Redux Toolkit 기반 상태관리를 **react-query + Zustand** 조합으로 전환합니다.
+Redux Toolkit 기반 상태관리를 **react-query + Zustand** 조합으로 전환했습니다.
 
-> **상태: 계획** (2026-02)
+> **상태: 완료** (2026-02)
 
 ### portal-client 대비 규모 차이
 
@@ -18,7 +18,7 @@ Redux Toolkit 기반 상태관리를 **react-query + Zustand** 조합으로 전�
 
 ---
 
-## 현재 상태 분석
+## 이전 상태 (Redux 기반)
 
 ### Redux Slice 목록
 
@@ -30,7 +30,7 @@ Redux Toolkit 기반 상태관리를 **react-query + Zustand** 조합으로 전�
 | `permissionSlice` | 13개 (CRUD + 역할 권한 할당) | authz-server | 권한 관리 |
 | `serviceSlice` | 8개 (CRUD + 가시성 역할 할당) | portal-server | 서비스 관리 |
 
-### 현재 문제점
+### 해결된 문제점
 
 | 문제 | 설명 |
 |-----|------|
@@ -56,7 +56,7 @@ Redux Toolkit 기반 상태관리를 **react-query + Zustand** 조합으로 전�
 #### User 도메인 (auth-server)
 | Redux 코드 | 전환 | queryKey |
 |-----------|------|---------|
-| `fetchUsers` thunk | `useUsers` query | `['users', query]` |
+| `fetchUsers` thunk | `useUsers` query | `['users', 'list', query]` |
 | `fetchUserById` thunk | `useUserById` query | `['users', 'detail', id]` |
 | `updateUser` thunk | `useUpdateUser` mutation | 성공 시 users 무효화 |
 | `deleteUser` thunk | `useDeleteUser` mutation | 성공 시 users 무효화 |
@@ -64,42 +64,42 @@ Redux Toolkit 기반 상태관리를 **react-query + Zustand** 조합으로 전�
 #### Role 도메인 (authz-server)
 | Redux 코드 | 전환 | queryKey |
 |-----------|------|---------|
-| `fetchRoles` thunk | `useRoles` query | `['roles', query]` |
+| `fetchRoles` thunk | `useRoles` query | `['roles', 'list', query]` |
 | `fetchRoleById` thunk | `useRoleById` query | `['roles', 'detail', id]` |
 | `fetchUserRoles` thunk | `useUserRoles` query | `['roles', 'user', userId]` |
 | `createRole` thunk | `useCreateRole` mutation | 성공 시 roles 무효화 |
-| `updateRole` thunk | `useUpdateRole` mutation | 성공 시 roles 무효화 |
-| `deleteRole` thunk | `useDeleteRole` mutation | 성공 시 roles 무효화 |
-| `assignRoleToUser` thunk | `useAssignRoleToUser` mutation | 성공 시 user roles 무효화 |
-| `removeRoleFromUser` thunk | `useRemoveRoleFromUser` mutation | 성공 시 user roles 무효화 |
+| `updateRole` thunk | `useUpdateRole` mutation | 성공 시 roles.all + roles.detail 무효화 |
+| `deleteRole` thunk | `useDeleteRole` mutation | 성공 시 roles.all 무효화 |
+| `assignRoleToUser` thunk | `useAssignRoleToUser` mutation | 성공 시 `roles.byUser(userId)` 무효화 |
+| `removeRoleFromUser` thunk | `useRemoveRoleFromUser` mutation | 성공 시 `roles.byUser(userId)` 무효화 |
 
 #### Permission 도메인 (authz-server)
 | Redux 코드 | 전환 | queryKey |
 |-----------|------|---------|
-| `fetchPermissions` thunk | `usePermissions` query | `['permissions', query]` |
+| `fetchPermissions` thunk | `usePermissions` query | `['permissions', 'list', query]` |
 | `fetchPermissionById` thunk | `usePermissionById` query | `['permissions', 'detail', id]` |
 | `fetchRolePermissions` thunk | `useRolePermissions` query | `['permissions', 'role', roleId]` |
 | `fetchUserPermissions` thunk | `useUserPermissions` query | `['permissions', 'user', userId]` |
-| `createPermission` thunk | `useCreatePermission` mutation | 성공 시 permissions 무효화 |
-| `updatePermission` thunk | `useUpdatePermission` mutation | 성공 시 permissions 무효화 |
-| `deletePermission` thunk | `useDeletePermission` mutation | 성공 시 permissions 무효화 |
-| `assignPermissionToRole` thunk | `useAssignPermissionToRole` mutation | 성공 시 role permissions 무효화 |
-| `removePermissionFromRole` thunk | `useRemovePermissionFromRole` mutation | 성공 시 role permissions 무효화 |
-| `assignMultiplePermissionsToRole` thunk | `useAssignMultiplePermissionsToRole` mutation | 성공 시 role permissions 무효화 |
-| `replaceRolePermissions` thunk | `useReplaceRolePermissions` mutation | 성공 시 role permissions 무효화 |
+| `createPermission` thunk | `useCreatePermission` mutation | permissions.all 무효화 |
+| `updatePermission` thunk | `useUpdatePermission` mutation | permissions.all + permissions.detail 무효화 |
+| `deletePermission` thunk | `useDeletePermission` mutation | permissions.all 무효화 |
+| `assignPermissionToRole` thunk | `useAssignPermissionToRole` mutation | `permissions.byRole(roleId)` 무효화 |
+| `removePermissionFromRole` thunk | `useRemovePermissionFromRole` mutation | `permissions.byRole(roleId)` 무효화 |
+| `assignMultiplePermissionsToRole` thunk | `useAssignMultiplePermissionsToRole` mutation | `permissions.byRole(roleId)` 무효화 |
+| `replaceRolePermissions` thunk | `useReplaceRolePermissions` mutation | `permissions.byRole(roleId)` 무효화 |
 
 #### Service 도메인 (portal-server)
 | Redux 코드 | 전환 | queryKey |
 |-----------|------|---------|
-| `fetchServices` thunk | `useServices` query | `['services', query]` |
+| `fetchServices` thunk | `useServices` query | `['services', 'list', query]` |
 | `fetchServiceById` thunk | `useServiceById` query | `['services', 'detail', id]` |
 | `fetchServiceVisibleRoles` thunk | `useServiceVisibleRoles` query | `['services', 'roles', serviceId]` |
-| `createService` thunk | `useCreateService` mutation | 성공 시 services 무효화 |
-| `updateService` thunk | `useUpdateService` mutation | 성공 시 services 무효화 |
-| `deleteService` thunk | `useDeleteService` mutation | 성공 시 services 무효화 |
-| `assignVisibleRoleToService` thunk | `useAssignVisibleRoleToService` mutation | 성공 시 service roles 무효화 |
-| `removeVisibleRoleFromService` thunk | `useRemoveVisibleRoleFromService` mutation | 성공 시 service roles 무효화 |
-| `replaceServiceVisibleRoles` thunk | `useReplaceServiceVisibleRoles` mutation | 성공 시 service roles 무효화 |
+| `createService` thunk | `useCreateService` mutation | services.all 무효화 |
+| `updateService` thunk | `useUpdateService` mutation | services.all + services.detail 무효화 |
+| `deleteService` thunk | `useDeleteService` mutation | services.all 무효화 |
+| `assignVisibleRoleToService` thunk | `useAssignVisibleRoleToService` mutation | `services.visibleRoles(serviceId)` 무효화 |
+| `removeVisibleRoleFromService` thunk | `useRemoveVisibleRoleFromService` mutation | `services.visibleRoles(serviceId)` 무효화 |
+| `replaceServiceVisibleRoles` thunk | `useReplaceServiceVisibleRoles` mutation | `services.visibleRoles(serviceId)` 무효화 |
 
 ### 클라이언트 상태 → Zustand
 
@@ -112,7 +112,9 @@ Redux Toolkit 기반 상태관리를 **react-query + Zustand** 조합으로 전�
 
 ---
 
-## 새로운 파일 구조
+## 최종 파일 구조
+
+> **주요 변경**: 초기 계획은 훅별 개별 파일(33개)이었으나, Phase 6-8 완료 후 **도메인별 파일로 재구성** (커밋 `83f6e74`).
 
 ```
 src/
@@ -122,51 +124,29 @@ src/
 ├── hooks/
 │   ├── queries/
 │   │   ├── keys.ts                        # [신규] Query Key Factory
-│   │   ├── useAuthInitialize.ts           # [신규]
-│   │   ├── useMyProfile.ts                # [신규]
-│   │   ├── useUsers.ts                    # [신규]
-│   │   ├── useUserById.ts                 # [신규]
-│   │   ├── useRoles.ts                    # [신규]
-│   │   ├── useRoleById.ts                 # [신규]
-│   │   ├── useUserRoles.ts                # [신규]
-│   │   ├── usePermissions.ts              # [신규]
-│   │   ├── usePermissionById.ts           # [신규]
-│   │   ├── useRolePermissions.ts          # [신규]
-│   │   ├── useUserPermissions.ts          # [신규]
-│   │   ├── useServices.ts                 # [신규]
-│   │   ├── useServiceById.ts              # [신규]
-│   │   └── useServiceVisibleRoles.ts      # [신규]
+│   │   ├── auth.ts                        # [신규] Auth queries (useAuthInitialize, useMyProfile)
+│   │   ├── users.ts                       # [신규] User queries (useUsers, useUserById)
+│   │   ├── roles.ts                       # [신규] Role queries (useRoles, useRoleById, useUserRoles)
+│   │   ├── permissions.ts                 # [신규] Permission queries (usePermissions, usePermissionById, useRolePermissions, useUserPermissions)
+│   │   └── services.ts                    # [신규] Service queries (useServices, useServiceById, useServiceVisibleRoles)
 │   ├── mutations/
-│   │   ├── useLogout.ts                   # [신규]
-│   │   ├── useUpdateUser.ts               # [신규]
-│   │   ├── useDeleteUser.ts               # [신규]
-│   │   ├── useCreateRole.ts               # [신규]
-│   │   ├── useUpdateRole.ts               # [신규]
-│   │   ├── useDeleteRole.ts               # [신규]
-│   │   ├── useAssignRoleToUser.ts         # [신규]
-│   │   ├── useRemoveRoleFromUser.ts       # [신규]
-│   │   ├── useCreatePermission.ts         # [신규]
-│   │   ├── useUpdatePermission.ts         # [신규]
-│   │   ├── useDeletePermission.ts         # [신규]
-│   │   ├── useAssignPermissionToRole.ts   # [신규]
-│   │   ├── useRemovePermissionFromRole.ts # [신규]
-│   │   ├── useAssignMultiplePermissionsToRole.ts # [신규]
-│   │   ├── useReplaceRolePermissions.ts   # [신규]
-│   │   ├── useCreateService.ts            # [신규]
-│   │   ├── useUpdateService.ts            # [신규]
-│   │   ├── useDeleteService.ts            # [신규]
-│   │   ├── useAssignVisibleRoleToService.ts # [신규]
-│   │   ├── useRemoveVisibleRoleFromService.ts # [신규]
-│   │   └── useReplaceServiceVisibleRoles.ts # [신규]
+│   │   ├── auth.ts                        # [신규] Auth mutations (useLogout)
+│   │   ├── users.ts                       # [신규] User mutations (useUpdateUser, useDeleteUser)
+│   │   ├── roles.ts                       # [신규] Role mutations (useCreateRole, useUpdateRole, useDeleteRole, useAssignRoleToUser, useRemoveRoleFromUser)
+│   │   ├── permissions.ts                 # [신규] Permission mutations (useCreatePermission, useUpdatePermission, useDeletePermission, useAssignPermissionToRole, useRemovePermissionFromRole, useAssignMultiplePermissionsToRole, useReplaceRolePermissions)
+│   │   └── services.ts                    # [신규] Service mutations (useCreateService, useUpdateService, useDeleteService, useAssignVisibleRoleToService, useRemoveVisibleRoleFromService, useReplaceServiceVisibleRoles)
 │   ├── useAuth.ts                         # [수정] Zustand + react-query 기반
-│   └── useUserProfile.ts                  # [수정] useMyProfile query 기반
+│   ├── useUserProfile.ts                  # [수정] useMyProfile query 기반
+│   └── useDashboard.ts                    # [수정] react-query + queryClient.invalidateQueries 기반
 ├── components/
 │   ├── common/
-│   │   └── ThemeInitializer.tsx           # [신규] 테마 DOM 처리
+│   │   └── ThemeInitializer.tsx           # [신규] 테마 DOM 처리 (named export)
 │   ├── auth/
 │   │   └── AdminAuthGuard.tsx             # [수정] authStore.isInitialized 사용
+│   ├── modals/
+│   │   └── RolePermissionModal.tsx        # [수정] Redux 제거, usePermissions + useRolePermissions + useReplaceRolePermissions 사용
 │   └── providers/
-│       └── Providers.tsx                  # [수정] QueryClientProvider + ThemeInitializer
+│       └── Providers.tsx                  # [수정] QueryClientProvider + ThemeInitializer (named import)
 ├── context/
 │   └── AuthContext.tsx                    # [수정] Redux 제거, react-query 기반 단순화
 └── app/
@@ -176,7 +156,7 @@ src/
     └── services/page.tsx                  # [수정] react-query 훅 사용
 ```
 
-### 삭제 파일
+### 삭제된 파일
 
 | 파일 | 이유 |
 |------|------|
@@ -191,17 +171,14 @@ src/
 
 ---
 
-## 마이그레이션 단계
+## 마이그레이션 진행 내역
 
-### Phase 1: 패키지 설치 + Provider 설정
+### Phase 1: 패키지 추가 + QueryClientProvider 설정
+**커밋**: `5541744`
 
 ```bash
-# 추가
 npm install @tanstack/react-query zustand
 npm install @tanstack/react-query-devtools -D
-
-# 제거 (Phase 13에서)
-# npm uninstall @reduxjs/toolkit react-redux
 ```
 
 **Providers.tsx 최종 형태:**
@@ -224,26 +201,18 @@ return (
 );
 ```
 
-> **참고**: portal-client와 달리 `AdminAuthGuard`가 `Layout`을 감싸는 구조로 변경.
-
 ---
 
-### Phase 2: Zustand 스토어 + ThemeInitializer
+### Phase 2-3: Zustand 스토어 + ThemeInitializer + Query Key Factory
+**커밋**: `cf62dbc`
 
-portal-client와 동일하게 생성:
-
+**생성 파일:**
 - `src/store/authStore.ts` — `isAuthenticated`, `isInitialized`, `setAuthenticated`, `setInitialized`, `clearAuth`
 - `src/store/themeStore.ts` — `theme`, `actualTheme`, `setTheme`, `setActualTheme`, `toggleTheme`
-- `src/components/common/ThemeInitializer.tsx` — 테마 DOM 사이드이펙트 처리
+- `src/components/common/ThemeInitializer.tsx` — 테마 DOM 사이드이펙트 처리 (**named export** `export function ThemeInitializer()`)
+- `src/hooks/queries/keys.ts` — Query Key Factory
 
----
-
-### Phase 3: Query Key Factory
-
-**파일**: `src/hooks/queries/keys.ts`
-
-규모가 크기 때문에 portal-client와 달리 **반드시** Key Factory를 도입합니다.
-
+**Query Key Factory:**
 ```typescript
 export const queryKeys = {
   auth: {
@@ -279,15 +248,12 @@ export const queryKeys = {
 
 ---
 
-### Phase 4: Auth Query/Mutation 훅
+### Phase 4-5: Auth/User Query/Mutation 훅 생성
+**커밋**: `e0450d7`
 
-portal-client와 거의 동일 구조:
+**파일:** `src/hooks/queries/auth.ts`, `src/hooks/mutations/auth.ts`, `src/hooks/queries/users.ts`, `src/hooks/mutations/users.ts`
 
-- `src/hooks/queries/useAuthInitialize.ts`
-- `src/hooks/queries/useMyProfile.ts`
-- `src/hooks/mutations/useLogout.ts`
-
-`useLogout` 특이사항: 로그아웃 성공 시 모든 도메인 캐시 클리어:
+`useLogout` 특이사항: 로그아웃 성공 시 모든 캐시 클리어:
 ```typescript
 onSuccess: () => {
   clearAuth();
@@ -297,101 +263,76 @@ onSuccess: () => {
 
 ---
 
-### Phase 5: User Query/Mutation 훅
+### Phase 6: Role Query/Mutation 훅 생성 (8개)
+**커밋**: `62ffeed`
 
-```typescript
-// src/hooks/queries/useUsers.ts
-export function useUsers(query: UserSearchQuery = {}) {
-  return useQuery({
-    queryKey: queryKeys.users.list(query),
-    queryFn: () => userService.getUsers(query),
-    staleTime: 2 * 60 * 1000,
-  });
-}
+**파일:** `src/hooks/queries/roles.ts`, `src/hooks/mutations/roles.ts`
 
-// src/hooks/mutations/useUpdateUser.ts
-export function useUpdateUser() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateUserDto }) =>
-      userService.updateUser(id, data),
-    onSuccess: (_, { id }) => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.users.all() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(id) });
-    },
-  });
-}
+**Queries** (3개): `useRoles`, `useRoleById`, `useUserRoles(userId: string | null)` (enabled: !!userId)
 
-// src/hooks/mutations/useDeleteUser.ts
-export function useDeleteUser() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => userService.deleteUser(id),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.users.all() });
-    },
-  });
-}
+**Mutations** (5개): `useCreateRole`, `useUpdateRole`, `useDeleteRole`, `useAssignRoleToUser`, `useRemoveRoleFromUser`
+
+`useAssignRoleToUser` / `useRemoveRoleFromUser` — `onSuccess`에서 자동으로 `queryKeys.roles.byUser(userId)` 무효화 → `useUserRoles` 자동 refetch
+
+---
+
+### Phase 7: Permission Query/Mutation 훅 생성 (11개)
+**커밋**: `ee86d15`
+
+**파일:** `src/hooks/queries/permissions.ts`, `src/hooks/mutations/permissions.ts`
+
+**Queries** (4개): `usePermissions`, `usePermissionById`, `useRolePermissions(roleId: string | null)`, `useUserPermissions`
+
+**Mutations** (7개): `useCreatePermission`, `useUpdatePermission`, `useDeletePermission`, `useAssignPermissionToRole`, `useRemovePermissionFromRole`, `useAssignMultiplePermissionsToRole`, `useReplaceRolePermissions`
+
+---
+
+### Phase 8: Service Query/Mutation 훅 생성 (9개)
+**커밋**: `236ce91`
+
+**파일:** `src/hooks/queries/services.ts`, `src/hooks/mutations/services.ts`
+
+**Queries** (3개): `useServices`, `useServiceById`, `useServiceVisibleRoles`
+
+**Mutations** (6개): `useCreateService`, `useUpdateService`, `useDeleteService`, `useAssignVisibleRoleToService`, `useRemoveVisibleRoleFromService`, `useReplaceServiceVisibleRoles`
+
+---
+
+### 훅 구조 재구성 (파일-per-훅 → 도메인별)
+**커밋**: `83f6e74`
+
+> Phase 6-8에서 훅별 개별 파일로 생성했으나, 관리 복잡도 문제로 **도메인별 단일 파일**로 재구성.
+
+**변경 전** (33개 파일):
+```
+hooks/queries/useRoles.ts
+hooks/queries/useRoleById.ts
+hooks/queries/useUserRoles.ts
+hooks/mutations/useCreateRole.ts
+hooks/mutations/useUpdateRole.ts
+...
+```
+
+**변경 후** (10개 파일):
+```
+hooks/queries/auth.ts        (useAuthInitialize, useMyProfile)
+hooks/queries/users.ts       (useUsers, useUserById)
+hooks/queries/roles.ts       (useRoles, useRoleById, useUserRoles)
+hooks/queries/permissions.ts (usePermissions, usePermissionById, useRolePermissions, useUserPermissions)
+hooks/queries/services.ts    (useServices, useServiceById, useServiceVisibleRoles)
+hooks/mutations/auth.ts      (useLogout)
+hooks/mutations/users.ts     (useUpdateUser, useDeleteUser)
+hooks/mutations/roles.ts     (useCreateRole, useUpdateRole, useDeleteRole, useAssignRoleToUser, useRemoveRoleFromUser)
+hooks/mutations/permissions.ts (useCreatePermission, useUpdatePermission, useDeletePermission, ...)
+hooks/mutations/services.ts  (useCreateService, useUpdateService, useDeleteService, ...)
 ```
 
 ---
 
-### Phase 6: Role Query/Mutation 훅 (8개)
+### Phase 9-10: AuthContext/useAuth/useUserProfile Redux 제거
+**커밋**: `048d69f`
 
-**Queries** (3개):
-- `useRoles(query)` — 역할 목록
-- `useRoleById(roleId)` — 역할 상세
-- `useUserRoles(userId)` — 사용자 역할 목록 (enabled: !!userId)
-
-**Mutations** (5개):
-- `useCreateRole` — 성공 시 `queryKeys.roles.all()` 무효화
-- `useUpdateRole` — 성공 시 roles.all + roles.detail 무효화
-- `useDeleteRole` — 성공 시 roles.all 무효화
-- `useAssignRoleToUser` — 성공 시 `queryKeys.roles.byUser(userId)` 무효화
-- `useRemoveRoleFromUser` — 성공 시 `queryKeys.roles.byUser(userId)` 무효화
-
----
-
-### Phase 7: Permission Query/Mutation 훅 (11개)
-
-**Queries** (4개):
-- `usePermissions(query)` — 권한 목록
-- `usePermissionById(permissionId)` — 권한 상세
-- `useRolePermissions(roleId)` — 역할의 권한 목록 (enabled: !!roleId)
-- `useUserPermissions(userId)` — 사용자의 권한 목록 (enabled: !!userId)
-
-**Mutations** (7개):
-- `useCreatePermission` — permissions.all 무효화
-- `useUpdatePermission` — permissions.all + permissions.detail 무효화
-- `useDeletePermission` — permissions.all 무효화
-- `useAssignPermissionToRole` — `queryKeys.permissions.byRole(roleId)` 무효화
-- `useRemovePermissionFromRole` — `queryKeys.permissions.byRole(roleId)` 무효화
-- `useAssignMultiplePermissionsToRole` — `queryKeys.permissions.byRole(roleId)` 무효화
-- `useReplaceRolePermissions` — `queryKeys.permissions.byRole(roleId)` 무효화
-
----
-
-### Phase 8: Service Query/Mutation 훅 (9개)
-
-**Queries** (3개):
-- `useServices(query)` — 서비스 목록
-- `useServiceById(serviceId)` — 서비스 상세
-- `useServiceVisibleRoles(serviceId)` — 서비스 가시성 역할 (enabled: !!serviceId)
-
-**Mutations** (6개):
-- `useCreateService` — services.all 무효화
-- `useUpdateService` — services.all + services.detail 무효화
-- `useDeleteService` — services.all 무효화
-- `useAssignVisibleRoleToService` — `queryKeys.services.visibleRoles(serviceId)` 무효화
-- `useRemoveVisibleRoleFromService` — `queryKeys.services.visibleRoles(serviceId)` 무효화
-- `useReplaceServiceVisibleRoles` — `queryKeys.services.visibleRoles(serviceId)` 무효화
-
----
-
-### Phase 9: AuthContext 단순화
-
-portal-client와 동일한 패턴:
-
+**AuthContext.tsx 패턴:**
 ```typescript
 export function AuthProvider({ children }): React.JSX.Element {
   const queryClient = useQueryClient();
@@ -415,45 +356,18 @@ export function AuthProvider({ children }): React.JSX.Element {
     window.addEventListener('tokenCleared', handleTokenCleared);
     return (): void => window.removeEventListener('tokenCleared', handleTokenCleared);
   }, [clearAuth]);
-
-  // ...
 }
 ```
 
----
-
-### Phase 10: 커스텀 훅 수정
-
-**useAuth.ts** (portal-client와 동일):
-```typescript
-export const useAuth = () => {
-  const { isAuthenticated, isInitialized } = useAuthStore();
-  const initQuery = useAuthInitialize({ enabled: !isInitialized });
-
-  return {
-    user: initQuery.data?.user ?? null,
-    isAuthenticated,
-    isLoading: initQuery.isPending,
-    error: initQuery.error ? String(initQuery.error) : null,
-    isInitialized,
-  };
-};
-```
-
-**useUserProfile.ts** (portal-client와 동일):
-- `useMyProfile` query 기반으로 재작성
-- usePermission, useRole, usePermissions, useAnyRole 파생 훅 유지
+> **명명 주의**: `AuthContext`의 내부 hook은 `useAuthContext`로 명명 (portal-client 패턴 동일). `hooks/useAuth.ts`의 `useAuth`와 충돌 방지.
 
 ---
 
 ### Phase 11: 컴포넌트 수정
+**커밋**: `e94210d`
 
-**AdminAuthGuard.tsx**:
+**AdminAuthGuard.tsx:**
 ```typescript
-// Before
-const { isAuthenticated, user, isLoading } = useAuth();
-if (isLoading) return <PageLoader />;
-
 // After
 import { useAuthStore } from '@/store/authStore';
 const { isInitialized } = useAuthStore();
@@ -461,21 +375,18 @@ const { isAuthenticated, user, isLoading } = useAuth();
 if (!isInitialized || isLoading) return <PageLoader message="관리자 권한을 확인하는 중..." />;
 ```
 
-**ThemeToggle** (존재하는 경우):
-- `useTheme(ThemeContext)` → `useThemeStore()`
+**ThemeToggle.tsx**: `useTheme(ThemeContext)` → `useThemeStore()`
 
-**Providers.tsx**:
-- `ThemeProvider` → `ThemeInitializer`
-- Redux `Provider` 제거
-- `ReactQueryDevtools` 추가
+**Providers.tsx**: `ThemeInitializer` named import으로 변경, Redux `Provider` 제거, `ReactQueryDevtools` 추가
 
 ---
 
 ### Phase 12: 페이지 컴포넌트 수정
+**커밋**: `f6ff62b`
 
 > **portal-client와의 가장 큰 차이점**: 페이지 컴포넌트가 Redux를 직접 사용하므로 수정 필요.
 
-#### 수정 패턴 (users/page.tsx 예시)
+#### 수정 패턴
 
 ```typescript
 // Before (Redux 직접 사용)
@@ -488,7 +399,9 @@ const handleDelete = async (id) => {
 };
 
 // After (react-query 훅 사용)
-const { data: usersData, isPending, error } = useUsers(query);
+const { data: usersData, isPending: isLoading, error } = useUsers(searchQuery);
+const users = usersData?.items ?? [];
+const pagination = usersData?.pageInfo;
 const deleteUserMutation = useDeleteUser(); // onSuccess에서 자동 무효화
 
 const handleDelete = async (id) => {
@@ -496,48 +409,73 @@ const handleDelete = async (id) => {
 };
 ```
 
-#### 수정 대상 페이지
-
-| 페이지 | 현재 사용 slice | 전환 훅 |
-|--------|-------------|---------|
-| `users/page.tsx` | userSlice, roleSlice, serviceSlice | useUsers, useRoles, useServices + mutations |
-| `roles/page.tsx` | roleSlice, permissionSlice | useRoles, usePermissions + mutations |
-| `permissions/page.tsx` | permissionSlice, roleSlice | usePermissions, useRoles + mutations |
-| `services/page.tsx` | serviceSlice, roleSlice | useServices, useRoles + mutations |
-
 #### useLoadingState 대체
-
-기존 `useLoadingState` 훅은 mutation의 `isPending`으로 대체됩니다:
 
 ```typescript
 // Before
 const { isLoading, withLoading } = useLoadingState();
-const handleDelete = withLoading('delete', async () => {
-  await dispatch(deleteUser(id)).unwrap();
+const handleSave = withLoading('save', async () => {
+  await dispatch(updateRole(data)).unwrap();
 });
 
 // After
-const deleteUserMutation = useDeleteUser();
-const handleDelete = async () => {
-  await deleteUserMutation.mutateAsync(id);
+const updateRoleMutation = useUpdateRole();
+const handleSave = async () => {
+  await updateRoleMutation.mutateAsync(data);
 };
-// 버튼에서: disabled={deleteUserMutation.isPending}
+// 버튼에서: disabled={updateRoleMutation.isPending}
 ```
+
+#### 모달 데이터 로딩 패턴 (Redux fetchById → 직접 서비스 호출)
+
+```typescript
+// Before
+await dispatch(fetchRoleById(role.id)).unwrap();
+const detail = useAppSelector(state => state.role.selectedRole);
+
+// After
+const detail = await roleService.getRoleById(role.id); // 직접 호출
+setSelectedRole(detail);
+setIsModalOpen(true);
+```
+
+#### useUserRoles 패턴 (users/page.tsx)
+
+```typescript
+// selectedUserId 상태로 useUserRoles 활성화
+const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+const { data: userRolesData } = useUserRoles(selectedUserId); // enabled: !!selectedUserId
+const userRoles = userRolesData ?? [];
+
+// 역할 할당/해제 → onSuccess에서 자동 invalidate → useUserRoles 자동 refetch
+const assignRoleMutation = useAssignRoleToUser();
+// handleCloseRoleModal: setSelectedUserId(null)
+```
+
+#### 수정된 페이지
+
+| 페이지 | 사용 훅 |
+|--------|---------|
+| `users/page.tsx` | useUsers, useRoles, useServices, useUserRoles(selectedUserId), useUpdateUser, useAssignRoleToUser, useRemoveRoleFromUser |
+| `roles/page.tsx` | useRoles, useServices, useCreateRole, useUpdateRole, useDeleteRole |
+| `permissions/page.tsx` | usePermissions, useRoles, useServices, useCreatePermission, useUpdatePermission, useDeletePermission |
+| `services/page.tsx` | useServices, useRoles, useCreateService, useUpdateService, useDeleteService |
 
 ---
 
-### Phase 13: 정리 + 검증
+### Phase 13: Redux 완전 제거 및 정리
+**커밋**: `208cb6e`
 
-**삭제 작업:**
+**삭제된 파일:**
 ```bash
-rm src/store/index.ts
-rm src/store/hooks.ts
-rm src/store/slices/authSlice.ts
-rm src/store/slices/userSlice.ts
-rm src/store/slices/roleSlice.ts
-rm src/store/slices/permissionSlice.ts
-rm src/store/slices/serviceSlice.ts
-rm src/context/ThemeContext.tsx
+src/store/index.ts
+src/store/hooks.ts
+src/store/slices/authSlice.ts
+src/store/slices/userSlice.ts
+src/store/slices/roleSlice.ts
+src/store/slices/permissionSlice.ts
+src/store/slices/serviceSlice.ts
+src/context/ThemeContext.tsx
 ```
 
 **package.json 정리:**
@@ -545,53 +483,102 @@ rm src/context/ThemeContext.tsx
 npm uninstall @reduxjs/toolkit react-redux
 ```
 
-**검증:**
+**추가 리팩토링 (원래 계획에 없던 항목):**
+
+- **`RolePermissionModal.tsx`**: Redux `fetchPermissions`, `fetchRolePermissions`, `replaceRolePermissions` 제거 → `usePermissions({ limit: LimitType.HUNDRED })`, `useRolePermissions(roleId)`, `useReplaceRolePermissions` 사용
+  ```typescript
+  const roleId = isOpen ? (role?.id ?? null) : null;
+  const { data: permissionsData } = usePermissions({ limit: LimitType.HUNDRED });
+  const { data: rolePermissionsData } = useRolePermissions(roleId);
+  useEffect(() => {
+    if (rolePermissionsData !== undefined) {
+      setSelectedPermissions(new Set(rolePermissionsData));
+    }
+  }, [rolePermissionsData]);
+  ```
+
+- **`useDashboard.ts`**: Redux `fetchUsers`, `fetchRoles`, `fetchPermissions` 제거 → react-query + `queryClient.invalidateQueries` 사용
+  ```typescript
+  const queryClient = useQueryClient();
+  const { data: usersData } = useUsers({ page: 1, limit: LimitType.HUNDRED });
+  const fetchStatistics = useCallback(async (): Promise<void> => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.roles.all() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.permissions.all() }),
+    ]);
+  }, [queryClient]);
+  ```
+
+---
+
+## 타입 오류 수정 내역
+
+`npm run type-check` 및 `npm run lint` 통과를 위해 수정된 항목들:
+
+| 파일 | 오류 | 수정 |
+|------|------|------|
+| `Pagination.tsx` | `PaginatedResultBase \| undefined`가 `PaginatedResultBase`에 비할당 | `pageInfo?: PaginatedResultBase \| undefined`로 변경, `if (!pageInfo) return null` 추가 |
+| `serviceService.ts` | `Service[]`가 `ServiceSearchResult[]`에 비할당 | 반환 타입을 `PaginatedResult<ServiceSearchResult>`로 변경, 미사용 `Service` import 제거 |
+| `RolePermissionModal.tsx`, `useDashboard.ts` | `Type '200' is not assignable to type 'LimitType'` | `LimitType.HUNDRED` (100)으로 변경 |
+| `Providers.tsx` | `Module has no default export` (ThemeInitializer) | `import { ThemeInitializer }` named import으로 변경 |
+| `useAuth.ts` | Unused `eslint-disable` directive | eslint-disable 주석 제거 |
+
+> **원인**: `tsconfig.json`의 `exactOptionalPropertyTypes: true` 설정으로 인해 `prop?: Type`과 `prop?: Type \| undefined`가 구분됨.
+
+---
+
+## 완료된 커밋 목록
+
+| Phase | 커밋 | 내용 |
+|-------|------|------|
+| 1 | `5541744` | 패키지 추가 + QueryClientProvider 설정 |
+| 2-3 | `cf62dbc` | Zustand 스토어 + ThemeInitializer + Query Key Factory |
+| 4-5 | `e0450d7` | Auth/User Query/Mutation 훅 생성 |
+| 6 | `62ffeed` | Role Query/Mutation 훅 생성 (8개) |
+| 7 | `ee86d15` | Permission Query/Mutation 훅 생성 (11개) |
+| 8 | `236ce91` | Service Query/Mutation 훅 생성 (9개) |
+| 재구성 | `83f6e74` | hooks 구조를 파일-per-훅에서 도메인별 파일로 재구성 |
+| 9-10 | `048d69f` | AuthContext/useAuth/useUserProfile Redux 제거 |
+| 11 | `e94210d` | 컴포넌트 수정 (AdminAuthGuard, ThemeToggle, Providers) |
+| 12 | `f6ff62b` | 페이지 컴포넌트 4개 수정 (users, roles, permissions, services) |
+| 13 | `208cb6e` | Redux 완전 제거 및 정리 (RolePermissionModal, useDashboard 포함) |
+
+---
+
+## 검증 결과
+
 ```bash
-npm run type-check
-npm run lint
-npm run build
+npm run type-check  # ✅ 통과
+npm run lint        # ✅ 통과
 ```
 
 ---
 
-## 진행 순서
+## 핵심 패턴 요약
 
-각 Phase 완료 후 `npm run build`로 확인하고 커밋:
+### 데이터 흐름
+```
+Component
+  ↓
+react-query Hook (useQuery/useMutation)
+  ↓
+Service (싱글톤)
+  ↓
+HTTP Client (@krgeobuk/http-client)
+  ↓
+API Server
+```
 
-| Phase | 내용 | 예상 커밋 메시지 |
-|-------|------|----------------|
-| 1 | 패키지 설치 + Provider 설정 | `refactor: Phase 1 패키지 + QueryClientProvider` |
-| 2 | Zustand 스토어 + ThemeInitializer | `refactor: Phase 2 Zustand 스토어` |
-| 3 | Query Key Factory | `refactor: Phase 3 Query Key Factory` |
-| 4 | Auth Query/Mutation 훅 (3개) | `refactor: Phase 4 Auth 훅` |
-| 5 | User Query/Mutation 훅 (4개) | `refactor: Phase 5 User 훅` |
-| 6 | Role Query/Mutation 훅 (8개) | `refactor: Phase 6 Role 훅` |
-| 7 | Permission Query/Mutation 훅 (11개) | `refactor: Phase 7 Permission 훅` |
-| 8 | Service Query/Mutation 훅 (9개) | `refactor: Phase 8 Service 훅` |
-| 9 | AuthContext 단순화 | `refactor: Phase 9 AuthContext` |
-| 10 | useAuth, useUserProfile 수정 | `refactor: Phase 10 커스텀 훅` |
-| 11 | AdminAuthGuard, ThemeToggle, Providers 수정 | `refactor: Phase 11 컴포넌트` |
-| 12 | 페이지 컴포넌트 수정 (4개 페이지) | `refactor: Phase 12 페이지 컴포넌트` |
-| 13 | Redux 파일 삭제 + 패키지 정리 + 빌드 검증 | `refactor: Phase 13 정리 및 검증` |
+### 클라이언트 상태
+```
+Component
+  ↓
+Zustand Store (authStore / themeStore)
+```
 
----
-
-## portal-client 대비 추가 고려사항
-
-### 1. Query Key Factory 필수 도입
-5개 도메인 × 복수 queryKey → 인라인 관리 불가. `keys.ts` 파일로 중앙화 필수.
-
-### 2. ReactQueryDevtools 추가
-관리자 화면 특성상 데이터 캐시 상태 디버깅 중요. 개발 환경에서 활성화.
-
-### 3. 페이지 컴포넌트 수정 범위
-portal-client는 훅 시그니처 유지로 페이지 수정이 불필요했으나,
-portal-admin-client는 페이지가 Redux를 직접 사용 → 4개 페이지 전면 수정 필요.
-
-### 4. useLoadingState 처리
-현재 일부 액션 버튼에서 사용 중. mutation의 `isPending`으로 대체하여 훅 제거 가능.
-단, 복수의 mutation이 동시 사용되는 경우 각 mutation의 isPending을 구분해서 사용.
-
-### 5. 캐시 무효화 전략
-역할-권한, 서비스-역할 등 연관 관계가 복잡 → mutation 성공 시 관련 queryKey 범위 설정에 주의.
-예: 역할 삭제 시 → `roles.all`, `permissions.byRole(roleId)`, `users 역할` 모두 무효화 검토.
+### 캐시 무효화 전략
+- mutation `onSuccess` → `queryClient.invalidateQueries({ queryKey: queryKeys.domain.all() })`
+- 연관 관계 있는 경우 복수 무효화: 역할 삭제 → `roles.all` + `roles.byUser(userId)`
+- 수동 새로고침: `queryClient.invalidateQueries` (대시보드 통계)
+- 로그아웃: `queryClient.clear()` (모든 캐시 완전 제거)
