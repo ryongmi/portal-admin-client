@@ -1,158 +1,277 @@
 # Portal Admin Client
 
-**krgeobuk 생태계의 통합 관리자 포탈**
+> KRGeobuk 생태계의 관리자 포탈
 
-Portal Admin Client는 krgeobuk 마이크로서비스 생태계의 중앙 관리 인터페이스입니다. 시스템 관리자가 사용자, 역할, 권한, 서비스를 통합 관리할 수 있는 현대적이고 직관적인 웹 애플리케이션입니다.
+krgeobuk 마이크로서비스 생태계의 중앙 관리 인터페이스로, 사용자·역할·권한·서비스를 통합 관리합니다. 관리자 역할 보유자만 접근 가능합니다.
 
-## 🎯 프로젝트 목적
+---
 
-Portal Admin Client는 다음과 같은 목적으로 개발되었습니다:
+## 주요 기능
 
-- **통합 관리**: 여러 마이크로서비스의 관리 기능을 하나의 인터페이스에서 제공
-- **보안 강화**: 관리자 전용 인터페이스로 시스템 보안성 향상
-- **사용자 경험**: 직관적이고 현대적인 UI/UX로 관리 효율성 증대
-- **확장성**: 새로운 서비스 추가 시 쉽게 확장 가능한 아키텍처
+### 대시보드 (`/`)
+- 시스템 현황 통계 (사용자 수, 서비스 수 등)
+- 시스템 건강 상태 모니터링
+- 최근 활동 피드
 
-## 🚀 주요 기능
+### 사용자 관리 (`/users`)
+- 전체 사용자 목록 조회·검색 (페이지네이션)
+- 사용자 정보 수정
+- 사용자별 역할 할당·해제
 
-### 📊 대시보드
-- 실시간 시스템 현황 모니터링
-- 사용자 활동 통계 및 분석
-- 시스템 건강성 체크
-- 주요 지표 시각화
+### 역할 관리 (`/roles`)
+- 역할 생성·수정·삭제
+- 역할별 권한 할당·해제
+- 역할별 사용자 조회
 
-### 👥 사용자 관리
-- 전체 사용자 조회 및 검색
-- 사용자 정보 수정 및 관리
-- 사용자별 역할 할당
-- 계정 상태 관리 (활성/비활성)
+### 권한 관리 (`/permissions`)
+- 권한 생성·수정·삭제
+- 권한별 역할 조회
 
-### 🛡️ 역할 및 권한 관리
-- **역할 관리**: 시스템 역할 생성, 수정, 삭제
-- **권한 관리**: 세분화된 권한 체계 관리
-- **역할-권한 매핑**: 역할별 권한 할당 및 관리
-- **사용자-역할 할당**: 사용자별 역할 부여
+### 서비스 관리 (`/services`)
+- 서비스 등록·수정·삭제
+- 서비스별 가시성 역할 할당·해제
+- 서비스 접근 권한 제어
 
-### ⚙️ 서비스 관리
-- 등록된 서비스 조회 및 관리
-- 서비스 가시성 설정
-- 서비스별 접근 권한 제어
-- 서비스 상태 모니터링
+---
 
-### 👤 프로필 관리
-- 관리자 프로필 정보 관리
-- 비밀번호 변경
-- 개인 설정 관리
+## 기술 스택
 
-## 🔐 접근 권한
+| 분류 | 기술 |
+|------|------|
+| 프레임워크 | Next.js 15 (App Router), TypeScript 5 |
+| 상태 관리 | TanStack Query 5, Zustand 5, React Context |
+| UI | Tailwind CSS 3, Lucide React |
+| 폼 | React Hook Form 7 |
+| HTTP | `@krgeobuk/http-client` (Axios 기반, 토큰 자동 갱신) |
+| 보안 | CSP, CSRF, Rate Limiting (미들웨어) |
 
-**⚠️ 중요: 이 애플리케이션은 관리자 전용입니다.**
+---
 
-Portal Admin Client에 접근하려면 다음 조건을 만족해야 합니다:
+## 접근 권한
 
-- krgeobuk 계정으로 로그인
-- 다음 중 하나 이상의 관리자 역할 보유:
+**이 애플리케이션은 관리자 전용입니다.**
+
+접근을 위해 다음 조건이 필요합니다:
+- krgeobuk 계정 로그인
+- 아래 관리자 역할 중 하나 이상 보유
   - `super-admin` (최고 관리자)
   - `system-admin` (시스템 관리자)
   - `portal-admin` (포탈 관리자)
   - `admin` (일반 관리자)
 
-관리자 권한이 없는 사용자는 자동으로 일반 사용자 포탈로 리다이렉트됩니다.
-
-## 💻 시스템 요구사항
-
-- **Node.js**: 18.x 이상
-- **NPM**: 9.x 이상
-- **브라우저**: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
-
-## 🚦 시작하기
-
-### 1. 환경 설정
-
-```bash
-# 환경 파일 복사
-cp .env.example .env.local
-
-# 환경 변수 설정 (필요시 수정)
-# NEXT_PUBLIC_AUTH_SERVER_URL=http://localhost:8000
-# NEXT_PUBLIC_AUTHZ_SERVER_URL=http://localhost:8100
-# NEXT_PUBLIC_ADMIN_CLIENT_URL=http://localhost:3210
-```
-
-### 2. 의존성 설치
-
-```bash
-npm install
-```
-
-### 3. 개발 서버 실행
-
-```bash
-npm run dev
-```
-
-### 4. 접속
-
-브라우저에서 [http://localhost:3210](http://localhost:3210)으로 접속합니다.
-
-## 🔗 연동 서비스
-
-Portal Admin Client는 다음 백엔드 서비스와 연동됩니다:
-
-| 서비스 | 포트 | 역할 | 상태 |
-|--------|------|------|------|
-| **auth-server** | 8000 | 사용자 인증 및 OAuth | 필수 |
-| **authz-server** | 8100 | 역할 및 권한 관리 | 필수 |
-| **portal-server** | 8200 | 서비스 등록 및 관리 | 필수 |
-
-### 서비스 시작 순서
-
-1. **auth-server** 시작
-2. **authz-server** 시작  
-3. **portal-server** 시작
-4. **portal-admin-client** 시작
-
-## 📱 화면 구성
-
-### 주요 페이지
-- **홈 (`/`)**: 대시보드 및 시스템 현황
-- **사용자 관리 (`/users`)**: 전체 사용자 관리
-- **역할 관리 (`/roles`)**: 시스템 역할 관리
-- **권한 관리 (`/permissions`)**: 권한 체계 관리
-- **서비스 관리 (`/services`)**: 등록 서비스 관리
-- **프로필 (`/profile`)**: 관리자 개인정보
-
-### 반응형 디자인
-- **데스크톱**: 최적화된 관리 인터페이스
-- **태블릿**: 터치 친화적 UI
-- **모바일**: 핵심 기능 중심 간소화
-
-## 🎨 디자인 시스템
-
-- **컬러**: 전문적이고 신뢰감 있는 블루-퍼플 그라데이션
-- **타이포그래피**: 가독성을 고려한 시스템 폰트
-- **아이콘**: Lucide React 아이콘 시스템
-- **애니메이션**: 부드러운 트랜지션과 마이크로 인터랙션
-
-## 🛠️ 기술 스택
-
-- **Frontend**: Next.js 15, React 18, TypeScript
-- **Styling**: Tailwind CSS
-- **State Management**: Redux Toolkit
-- **Forms**: React Hook Form
-- **HTTP Client**: Axios + @krgeobuk/http-client
-- **Icons**: Lucide React
-
-## 📞 지원 및 문의
-
-- **개발팀 문의**: krgeobuk 개발팀
-- **버그 리포트**: 내부 이슈 트래커
-- **기능 요청**: 제품 기획팀
-
-## 📄 라이선스
-
-이 프로젝트는 krgeobuk 내부 사용을 위한 비공개 소프트웨어입니다.
+관리자 권한이 없는 사용자는 자동으로 일반 포탈(`NEXT_PUBLIC_PORTAL_CLIENT_URL`)로 리다이렉트됩니다.
 
 ---
 
-**개발자를 위한 상세 가이드는 [CLAUDE.md](./CLAUDE.md) 파일을 참조하세요.**
+## 빠른 시작
+
+### 환경 요구사항
+- Node.js 18+
+- 실행 중인 백엔드 서비스 (auth-server, authz-server, portal-server)
+
+### 설치 및 실행
+
+```bash
+# 1. 의존성 설치
+npm install
+
+# 2. 환경 변수 설정
+cp .env.example .env.local
+# .env.local에서 실제 값으로 수정
+
+# 3. 개발 서버 시작
+npm run dev
+```
+
+서버가 http://localhost:3210 에서 실행됩니다.
+
+### 스크립트
+
+```bash
+# 개발
+npm run dev          # Next.js 개발 서버 (포트 3210)
+npm run build        # 프로덕션 빌드
+npm run start        # 프로덕션 서버 시작 (포트 3210)
+
+# 코드 품질
+npm run lint         # ESLint 검사
+npm run lint:fix     # ESLint 자동 수정
+npm run type-check   # TypeScript 타입 검사
+```
+
+---
+
+## 프로젝트 구조
+
+```
+src/
+├── app/                          # Next.js App Router
+│   ├── page.tsx                  # 대시보드 (/)
+│   ├── users/page.tsx            # 사용자 관리
+│   ├── roles/page.tsx            # 역할 관리
+│   ├── permissions/page.tsx      # 권한 관리
+│   ├── services/page.tsx         # 서비스 관리
+│   └── layout.tsx                # 루트 레이아웃 (AdminAuthGuard 적용)
+│
+├── components/
+│   ├── auth/
+│   │   └── AdminAuthGuard.tsx    # 관리자 권한 보호 컴포넌트
+│   ├── common/                   # 공통 UI (Button, Modal, Table, Toast 등)
+│   ├── layout/                   # Layout, Header, Sidebar
+│   ├── dashboard/                # StatsCard, SystemHealthCard, ActivityFeed 등
+│   ├── modals/                   # 도메인별 폼 모달 (User/Role/Permission/Service)
+│   └── providers/
+│       └── Providers.tsx         # 루트 프로바이더
+│
+├── context/
+│   └── AuthContext.tsx           # AuthProvider + useAuth()
+│
+├── hooks/
+│   ├── queries/
+│   │   ├── keys.ts               # Query Key Factory
+│   │   ├── auth.ts               # useAuthInitialize, useMyProfile
+│   │   ├── users.ts              # useUsers, useUserById
+│   │   ├── roles.ts              # useRoles, useRoleById, useUserRoles
+│   │   ├── permissions.ts        # usePermissions, useRolePermissions
+│   │   └── services.ts           # useServices, useServiceById, useServiceVisibleRoles
+│   └── mutations/
+│       ├── auth.ts               # useLogout
+│       ├── users.ts              # useUpdateUser, useDeleteUser
+│       ├── roles.ts              # useCreateRole, useUpdateRole, useDeleteRole, useAssignRoleToUser 등
+│       ├── permissions.ts        # useCreatePermission, useAssignPermissionToRole 등
+│       └── services.ts           # useCreateService, useAssignVisibleRoleToService 등
+│
+├── services/
+│   ├── base/BaseService.ts       # 공통 에러 핸들러
+│   ├── authService.ts            # 인증 API
+│   ├── userService.ts            # 사용자 API
+│   ├── roleService.ts            # 역할 API
+│   ├── permissionService.ts      # 권한 API
+│   ├── serviceService.ts         # 서비스 API
+│   └── dashboardService.ts       # 대시보드 API
+│
+├── store/
+│   ├── authStore.ts              # Zustand: isAuthenticated, isInitialized
+│   └── themeStore.ts             # Zustand: 다크 모드
+│
+└── lib/
+    └── httpClient.ts             # @krgeobuk/http-client (authApi, authzApi, portalApi)
+```
+
+---
+
+## 페이지 및 권한
+
+| 경로 | 설명 | 접근 권한 |
+|------|------|-----------|
+| `/` | 대시보드 (시스템 현황) | 관리자 이상 |
+| `/users` | 사용자 관리 | 관리자 이상 |
+| `/roles` | 역할 관리 | 관리자 이상 |
+| `/permissions` | 권한 관리 | 관리자 이상 |
+| `/services` | 서비스 관리 | 관리자 이상 |
+
+모든 페이지는 루트 레이아웃에서 `AdminAuthGuard`로 보호됩니다.
+
+---
+
+## Query Key Factory
+
+모든 query key는 `src/hooks/queries/keys.ts`에서 중앙 관리합니다.
+
+```typescript
+export const queryKeys = {
+  auth: {
+    initialize: () => ['auth', 'initialize'],
+    myProfile:  () => ['auth', 'myProfile'],
+  },
+  users: {
+    all:    () => ['users'],
+    list:   (query?: object) => ['users', 'list', query],
+    detail: (id: string)     => ['users', 'detail', id],
+  },
+  roles: {
+    all:    () => ['roles'],
+    list:   (query?: object)   => ['roles', 'list', query],
+    detail: (id: string)       => ['roles', 'detail', id],
+    byUser: (userId: string)   => ['roles', 'user', userId],
+  },
+  permissions: {
+    all:    () => ['permissions'],
+    list:   (query?: object)       => ['permissions', 'list', query],
+    detail: (id: string)           => ['permissions', 'detail', id],
+    byRole: (roleId: string)       => ['permissions', 'role', roleId],
+    byUser: (userId: string)       => ['permissions', 'user', userId],
+  },
+  services: {
+    all:          () => ['services'],
+    list:         (query?: object)     => ['services', 'list', query],
+    detail:       (id: string)         => ['services', 'detail', id],
+    visibleRoles: (serviceId: string)  => ['services', 'roles', serviceId],
+  },
+};
+```
+
+---
+
+## 연결 서버
+
+| 서버 | 포트 | 용도 |
+|------|------|------|
+| auth-server | 8000 | 사용자 인증, 사용자 정보, OAuth |
+| authz-server | 8100 | 역할, 권한, 사용자-역할 매핑 |
+| portal-server | 8200 | 서비스 등록 및 관리 |
+
+---
+
+## 환경 변수
+
+```bash
+# ===== API 서버 =====
+NEXT_PUBLIC_AUTH_SERVER_URL=http://localhost:8000/api
+NEXT_PUBLIC_AUTHZ_SERVER_URL=http://localhost:8100/api
+NEXT_PUBLIC_PORTAL_SERVER_URL=http://localhost:8200/api
+NEXT_PUBLIC_TOKEN_REFRESH_URL=http://localhost:8000/api/auth/refresh
+
+# ===== 클라이언트 URL =====
+NEXT_PUBLIC_ADMIN_CLIENT_URL=http://localhost:3210
+NEXT_PUBLIC_PORTAL_CLIENT_URL=http://localhost:3200
+
+# ===== 환경 =====
+NEXT_PUBLIC_ENVIRONMENT=local
+NODE_ENV=local
+NEXT_TELEMETRY_DISABLED=1
+
+# ===== 보안 =====
+ALLOWED_ORIGINS=localhost,127.0.0.1
+NEXT_PUBLIC_API_TIMEOUT=15000
+NEXT_PUBLIC_RATE_LIMIT_MAX_ATTEMPTS=50
+NEXT_PUBLIC_ENABLE_CSRF=true
+NEXT_PUBLIC_ENABLE_INPUT_VALIDATION=true
+NEXT_PUBLIC_ENABLE_SECURITY_LOGGING=true
+```
+
+전체 목록: `.env.example`
+
+---
+
+## 보안
+
+`src/middleware.ts`에서 모든 요청에 보안 헤더를 적용합니다.
+
+| 항목 | 내용 |
+|------|------|
+| CSP | 스크립트/리소스 출처 제한 |
+| X-Frame-Options | 클릭재킹 방지 (`DENY`) |
+| X-Content-Type-Options | MIME 스니핑 방지 |
+| CSRF | POST/PUT/PATCH/DELETE 요청 Origin 검증 |
+| Rate Limiting | IP 기반 분당 100 요청 제한 |
+| HSTS | 프로덕션 HTTPS 강제 |
+
+---
+
+## 문서
+
+| 파일 | 설명 |
+|------|------|
+| [CLAUDE.md](./CLAUDE.md) | 개발 가이드 (패턴, 표준, 워크플로우) |
+| [docs/](./docs/) | 기능별 설계 문서 |
