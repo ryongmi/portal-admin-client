@@ -4,1229 +4,667 @@
 
 ## 프로젝트 개요
 
-portal-admin-client는 krgeobuk 생태계의 중앙 관리 인터페이스로, Next.js 15로 구축된 관리자 전용 웹 애플리케이션입니다. 사용자, 역할, 권한, 서비스를 통합 관리할 수 있는 현대적이고 안전한 관리자 포탈을 제공합니다.
+portal-admin-client는 krgeobuk 생태계의 중앙 관리 인터페이스로, Next.js 15로 구축된 관리자 전용 웹 애플리케이션입니다. 사용자, 역할, 권한, 서비스를 통합 관리합니다.
 
 ### 기술 스택
-- **Next.js 15** - App Router 기반 React 프레임워크  
-- **TypeScript** - 엄격 모드가 활성화된 완전한 타입 안전성
-- **Tailwind CSS** - 유틸리티 우선 CSS 프레임워크
-- **Redux Toolkit** - 상태 관리 및 비동기 처리
-- **React Hook Form** - 성능 최적화된 폼 관리
-- **@krgeobuk/http-client** - 통합 HTTP 클라이언트
-- **Lucide React** - 모던 아이콘 시스템
+- **Next.js 15** (App Router), **TypeScript 5**
+- **TanStack Query 5** - 서버 상태 관리
+- **Zustand 5** - 클라이언트 전역 상태
+- **React Context** - 인증 Context (AuthProvider)
+- **Tailwind CSS 3** - 유틸리티 CSS, 다크 모드 지원
+- **React Hook Form 7** - 폼 관리
+- **@krgeobuk/http-client** - Axios 기반 HTTP 클라이언트 (토큰 자동 갱신 내장)
 
 ## 핵심 명령어
 
-### 개발
 ```bash
-# 개발 서버 시작 (포트 3210)
+# 개발 서버 (포트 3210)
 npm run dev
 
-# 빌드
-npm run build              # 프로덕션 빌드
-npm run start              # 프로덕션 서버 시작 (포트 3210)
+# 빌드 & 프로덕션 서버
+npm run build
+npm run start
 
-# 타입 검사
-npm run type-check         # TypeScript 타입 검사
+# 코드 품질
+npm run lint          # ESLint 검사
+npm run lint:fix      # ESLint 자동 수정
+npm run type-check    # TypeScript 타입 검사
 ```
 
-### 코드 품질
-```bash
-# 린팅
-npm run lint               # ESLint 실행
-npm run lint:fix           # 자동 수정과 함께 린팅
+## 아키텍처
+
+### 디렉터리 구조
+
+```
+src/
+├── app/                          # Next.js App Router
+│   ├── page.tsx                  # 대시보드 (/)
+│   ├── users/page.tsx            # 사용자 관리
+│   ├── roles/page.tsx            # 역할 관리
+│   ├── permissions/page.tsx      # 권한 관리
+│   ├── services/page.tsx         # 서비스 관리
+│   └── layout.tsx                # 루트 레이아웃 (AdminAuthGuard 적용)
+│
+├── components/
+│   ├── auth/
+│   │   └── AdminAuthGuard.tsx    # 관리자 권한 보호 컴포넌트
+│   ├── common/                   # 공통 UI (Button, Modal, Table, Toast 등)
+│   ├── layout/                   # Layout, Header, Sidebar
+│   ├── dashboard/                # StatsCard, SystemHealthCard, ActivityFeed 등
+│   ├── modals/                   # 도메인별 폼 모달 (User/Role/Permission/Service)
+│   └── providers/
+│       └── Providers.tsx         # 루트 프로바이더
+│
+├── context/
+│   └── AuthContext.tsx           # AuthProvider + useAuth()
+│
+├── hooks/
+│   ├── queries/
+│   │   ├── keys.ts               # Query Key Factory
+│   │   ├── auth.ts               # useAuthInitialize, useMyProfile
+│   │   ├── users.ts              # useUsers, useUserById
+│   │   ├── roles.ts              # useRoles, useRoleById, useUserRoles
+│   │   ├── permissions.ts        # usePermissions, useRolePermissions
+│   │   └── services.ts           # useServices, useServiceVisibleRoles
+│   ├── mutations/
+│   │   ├── auth.ts               # useLogout
+│   │   ├── users.ts              # useUpdateUser, useDeleteUser
+│   │   ├── roles.ts              # useCreateRole, useUpdateRole, useDeleteRole 등
+│   │   ├── permissions.ts        # useCreatePermission, useAssignPermissionToRole 등
+│   │   └── services.ts           # useCreateService, useAssignVisibleRoleToService 등
+│   ├── useAuth.ts                # Zustand + React Query 통합 인증 훅
+│   ├── useUserProfile.ts         # 프로필 조회 + 권한 검증 훅 모음
+│   ├── useDashboard.ts           # 대시보드 통계 집계 훅
+│   ├── useErrorHandler.ts        # API 에러 핸들링
+│   └── useDebounce.ts            # 디바운싱 유틸리티
+│
+├── services/
+│   ├── base/
+│   │   ├── BaseService.ts        # 공통 에러 핸들러
+│   │   └── ErrorHandler.ts       # ServiceError 변환
+│   ├── authService.ts            # 인증 API
+│   ├── userService.ts            # 사용자 API
+│   ├── roleService.ts            # 역할 API
+│   ├── permissionService.ts      # 권한 API
+│   └── serviceService.ts         # 서비스 API
+│
+├── store/
+│   ├── authStore.ts              # Zustand: isAuthenticated, isInitialized
+│   └── themeStore.ts             # Zustand: 다크 모드
+│
+├── lib/
+│   └── httpClient.ts             # @krgeobuk/http-client (authApi, authzApi, portalApi)
+│
+├── utils/
+│   └── roleUtils.ts              # hasAdminRole(), getAdminRoleNames()
+│
+└── types/
+    └── api.ts                    # @krgeobuk/* 타입 재수출 + 로컬 타입
 ```
 
-## 아키텍처 구조
+### 연결 서버
 
-### 관리자 전용 아키텍처
-- **관리자 권한 검증**: AdminAuthGuard를 통한 역할 기반 접근 제어
-- **자동 리다이렉트**: 비인가 사용자는 일반 포탈로 자동 이동
-- **통합 관리**: 다중 백엔드 서비스 통합 인터페이스
-- **실시간 모니터링**: 시스템 현황 실시간 대시보드
-
-### 서비스 통합 아키텍처
-portal-admin-client는 krgeobuk 마이크로서비스들의 관리 인터페이스입니다:
-
-1. **auth-server (8000)** - 사용자 인증 및 사용자 관리
-2. **authz-server (8100)** - 역할, 권한, 사용자-역할 관리
-3. **portal-server (8200)** - 서비스 등록 및 관리
-
-### 관리자 인터페이스 구조
-단순화된 라우팅 구조 (admin prefix 없음):
-- **대시보드** (`/`)
-- **사용자 관리** (`/users`)
-- **역할 관리** (`/roles`)
-- **권한 관리** (`/permissions`)
-- **서비스 관리** (`/services`)
-- **프로필 관리** (`/profile`)
+| 서버 | 환경 변수 | 포트 | 용도 |
+|------|-----------|------|------|
+| auth-server | `NEXT_PUBLIC_AUTH_SERVER_URL` | 8000 | 인증, 사용자 정보 |
+| authz-server | `NEXT_PUBLIC_AUTHZ_SERVER_URL` | 8100 | 역할, 권한, 사용자-역할 매핑 |
+| portal-server | `NEXT_PUBLIC_PORTAL_SERVER_URL` | 8200 | 서비스 등록 및 관리 |
 
 ---
 
-# 🔥 Portal Admin Client 개발 표준
+# Portal Admin Client 개발 가이드
 
-> **중요**: 이 섹션은 portal-admin-client의 **모든 개발 작업**에서 적용되는 표준입니다.
+> **Next.js 공통 개발 표준**: [docs/KRGEOBUK_NEXTJS_CLIENT_GUIDE.md](../docs/KRGEOBUK_NEXTJS_CLIENT_GUIDE.md)를 필수로 참조하세요.
+
+## 상태 관리 아키텍처
+
+세 가지 상태 레이어를 목적에 따라 분리합니다.
+
+```
+서버 상태     → TanStack Query (React Query)
+전역 UI 상태  → Zustand
+인증 Context  → React Context (AuthProvider)
+```
+
+### 1. Zustand 스토어 패턴
+
+```typescript
+// src/store/authStore.ts
+interface AuthStore {
+  isAuthenticated: boolean;
+  isInitialized: boolean;
+  setAuthenticated: (value: boolean) => void;
+  setInitialized: (value: boolean) => void;
+  clearAuth: () => void;
+}
+
+export const useAuthStore = create<AuthStore>((set) => ({
+  isAuthenticated: false,
+  isInitialized: false,
+  setAuthenticated: (value): void => set({ isAuthenticated: value }),
+  setInitialized: (value): void => set({ isInitialized: value }),
+  clearAuth: (): void => set({ isAuthenticated: false, isInitialized: false }),
+}));
+```
+
+### 2. React Query - Query Key Factory
+
+모든 query key는 `src/hooks/queries/keys.ts`에서 중앙 관리합니다.
+
+```typescript
+// src/hooks/queries/keys.ts
+export const queryKeys = {
+  auth: {
+    initialize: () => ['auth', 'initialize'] as const,
+    myProfile:  () => ['auth', 'myProfile'] as const,
+  },
+  users: {
+    all:    () => ['users'] as const,
+    list:   (query?: object) => ['users', 'list', query] as const,
+    detail: (id: string)     => ['users', 'detail', id] as const,
+  },
+  roles: {
+    all:    () => ['roles'] as const,
+    list:   (query?: object)   => ['roles', 'list', query] as const,
+    detail: (id: string)       => ['roles', 'detail', id] as const,
+    byUser: (userId: string)   => ['roles', 'user', userId] as const,
+  },
+  permissions: {
+    all:    () => ['permissions'] as const,
+    list:   (query?: object)       => ['permissions', 'list', query] as const,
+    detail: (id: string)           => ['permissions', 'detail', id] as const,
+    byRole: (roleId: string)       => ['permissions', 'role', roleId] as const,
+    byUser: (userId: string)       => ['permissions', 'user', userId] as const,
+  },
+  services: {
+    all:          () => ['services'] as const,
+    list:         (query?: object)     => ['services', 'list', query] as const,
+    detail:       (id: string)         => ['services', 'detail', id] as const,
+    visibleRoles: (serviceId: string)  => ['services', 'roles', serviceId] as const,
+  },
+};
+```
+
+> **규칙**: 인라인 문자열 키 사용 금지. 반드시 `queryKeys.*` 사용.
+
+### 3. React Query - 쿼리 훅 패턴
+
+훅은 도메인별 파일로 그룹화합니다 (`queries/auth.ts`, `queries/users.ts` 등).
+
+```typescript
+// src/hooks/queries/users.ts
+export function useUsers(query: UserSearchQuery = {}) {
+  return useQuery({
+    queryKey: queryKeys.users.list(query),
+    queryFn: () => userService.getUsers(query),
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useUserById(userId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.users.detail(userId ?? ''),
+    queryFn: () => userService.getUserById(userId!),
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+```
+
+### 4. React Query - 뮤테이션 훅 패턴
+
+뮤테이션 성공 후 반드시 관련 쿼리를 무효화합니다.
+
+```typescript
+// src/hooks/mutations/users.ts
+export function useUpdateUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<User> }) =>
+      userService.updateUser(id, data),
+    onSuccess: (_, { id }): void => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.users.all() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(id) });
+    },
+  });
+}
+```
+
+```typescript
+// src/hooks/mutations/roles.ts
+export function useAssignRoleToUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId, roleId }: { userId: string; roleId: string }) =>
+      roleService.assignRoleToUser(userId, roleId),
+    onSuccess: (_, { userId }): void => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.roles.byUser(userId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(userId) });
+    },
+  });
+}
+```
+
+### 5. AuthContext - 인증 상태 통합
+
+`AuthContext`는 React Query 결과를 Zustand 스토어와 동기화합니다.
+
+```typescript
+// src/context/AuthContext.tsx
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const { setAuthenticated, setInitialized, clearAuth } = useAuthStore();
+  const initQuery = useAuthInitialize();
+
+  // React Query 결과 → Zustand 동기화
+  useEffect(() => {
+    if (initQuery.isSuccess) {
+      const { isLogin, user } = initQuery.data;
+      setAuthenticated(!!(isLogin && user));
+      setInitialized(true);
+    } else if (initQuery.isError) {
+      setAuthenticated(false);
+      setInitialized(true);
+    }
+  }, [initQuery.isSuccess, initQuery.isError, initQuery.data]);
+
+  // shared-lib tokenCleared 이벤트 수신
+  useEffect(() => {
+    const handleTokenCleared = (): void => clearAuth();
+    window.addEventListener('tokenCleared', handleTokenCleared);
+    return (): void => window.removeEventListener('tokenCleared', handleTokenCleared);
+  }, [clearAuth]);
+
+  const value = {
+    user: initQuery.data?.user ?? null,
+    loading: initQuery.isPending,
+    isLoggedIn: isAuthenticated,
+    error: initQuery.error ? String(initQuery.error) : null,
+    logout: () => logoutMutation.mutateAsync(),
+    refreshUser: () => queryClient.invalidateQueries({ queryKey: queryKeys.auth.myProfile() }),
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+```
+
+**컴포넌트에서 사용:**
+
+```typescript
+// AuthContext를 통해 (user, logout 등)
+const { user, isLoggedIn, logout } = useAuth();
+
+// Zustand를 통해 (경량 인증 상태만)
+const { isAuthenticated, isInitialized } = useAuthStore();
+```
+
+---
+
+## HTTP 클라이언트 패턴
+
+### @krgeobuk/http-client 구조
+
+```typescript
+// src/lib/httpClient.ts
+export const httpClient = new HttpClient(
+  {
+    auth:   { baseURL: process.env.NEXT_PUBLIC_AUTH_SERVER_URL!,   withCredentials: true },
+    authz:  { baseURL: process.env.NEXT_PUBLIC_AUTHZ_SERVER_URL!,  withCredentials: true },
+    portal: { baseURL: process.env.NEXT_PUBLIC_PORTAL_SERVER_URL!, withCredentials: true },
+  },
+  { refreshUrl: process.env.NEXT_PUBLIC_TOKEN_REFRESH_URL!, refreshBeforeExpiry: 5 * 60 * 1000 },
+  { enableCSRF: true, enableInputValidation: true, enableSecurityLogging: true }
+);
+
+export const authApi   = { /* auth-server 전용 get/post/patch/delete */ };
+export const authzApi  = { /* authz-server 전용 */ };
+export const portalApi = { /* portal-server 전용 */ };
+export const tokenManager = httpClient.getTokenManager();
+```
+
+> **규칙**: 서버별로 `authApi`, `authzApi`, `portalApi`를 구분해서 사용. 직접 `axios.create()` 사용 금지.
+
+### 서비스 레이어 패턴
+
+서비스는 `BaseService`를 상속하는 클래스로 구현하고 싱글톤으로 내보냅니다.
+
+```typescript
+// src/services/roleService.ts
+export class RoleService extends BaseService {
+  // authz-server에서 역할 목록 조회
+  async getRoles(query: RoleSearchQuery = {}): Promise<PaginatedResult<RoleSearchResult>> {
+    try {
+      const response = await authzApi.get<PaginatedResult<RoleSearchResult>>('/roles', {
+        params: query,
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  // 역할에 권한 할당
+  async assignPermissionToRole(roleId: string, permissionId: string): Promise<void> {
+    try {
+      await authzApi.post<void>(`/roles/${roleId}/permissions/${permissionId}`);
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+}
+
+export const roleService = new RoleService(); // 싱글톤
+```
+
+**서버별 API 객체 사용 규칙:**
+
+| 도메인 | API 객체 | 서버 |
+|--------|----------|------|
+| 인증, 사용자 | `authApi` | auth-server (8000) |
+| 역할, 권한 | `authzApi` | authz-server (8100) |
+| 서비스 | `portalApi` | portal-server (8200) |
+
+---
 
 ## 관리자 권한 시스템
 
-### 1. AdminAuthGuard 구현 패턴
+### AdminAuthGuard
+
+루트 레이아웃에서 `AdminAuthGuard`가 모든 페이지를 보호합니다.
+
 ```typescript
 // src/components/auth/AdminAuthGuard.tsx
 export const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
   const { isAuthenticated, user, isLoading } = useAuth();
+  const { isInitialized } = useAuthStore();
 
   useEffect(() => {
-    if (!isAuthenticated && !isLoading) {
-      // 비로그인 사용자 → 로그인 페이지
-      const currentUrl = window.location.href;
-      const redirectUri = encodeURIComponent(currentUrl);
-      const loginUrl = `${process.env.NEXT_PUBLIC_AUTH_SERVER_URL}/api/auth/login?redirect_uri=${redirectUri}`;
-      window.location.href = loginUrl;
+    if (isLoading) return;
+
+    if (!isAuthenticated) {
+      // 미인증 → 로그인 페이지로 리다이렉트
+      const redirectUri = encodeURIComponent(window.location.href);
+      window.location.href =
+        `${process.env.NEXT_PUBLIC_AUTH_SERVER_URL}/auth/login?redirect_uri=${redirectUri}`;
+      return;
     }
-    
+
     if (isAuthenticated && user && !hasAdminRole(user)) {
       // 일반 사용자 → 포탈 클라이언트로 리다이렉트
-      window.location.href = process.env.NEXT_PUBLIC_PORTAL_CLIENT_URL || 'http://localhost:3200';
+      window.location.href =
+        process.env.NEXT_PUBLIC_PORTAL_CLIENT_URL || 'http://localhost:3200';
     }
   }, [isAuthenticated, user, isLoading]);
 
-  // 로딩 또는 권한 검증 중
-  if (isLoading || !isAuthenticated || !hasAdminRole(user)) {
-    return <PageLoader message="관리자 권한을 확인하는 중..." />;
+  if (!isInitialized || isLoading || !isAuthenticated) {
+    return <LoadingSpinner />;
+  }
+
+  if (isAuthenticated && user && !hasAdminRole(user)) {
+    return <UnauthorizedMessage />;
   }
 
   return <>{children}</>;
 };
 ```
 
-### 2. 역할 검증 유틸리티
+### hasAdminRole 유틸리티
+
 ```typescript
 // src/utils/roleUtils.ts
-const ADMIN_ROLE_NAMES = ['super-admin', 'system-admin', 'portal-admin', 'admin'];
+import { isAdminLevelRole } from '@krgeobuk/core/constants';
 
 export function hasAdminRole(user: UserWithRoles | null): boolean {
   if (!user) return false;
-  
-  // roles 배열에서 관리자 역할 확인
-  if (user.roles && Array.isArray(user.roles)) {
-    return user.roles.some((role: { name?: string }) => 
-      ADMIN_ROLE_NAMES.includes(role.name?.toLowerCase() || '')
-    );
-  }
-  
-  // 개발 환경에서 임시 바이패스 (운영에서는 제거)
-  if (process.env.NODE_ENV === 'development' && user.id) {
-    return true;
-  }
-  
-  return false;
-}
-```
+  if (!user.authorization?.roles) return false;
 
-### 3. 레이아웃 적용 패턴
-```typescript
-// src/app/layout.tsx
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="ko">
-      <body>
-        <Providers>
-          <AdminAuthGuard>
-            <Layout showSidebar>
-              {children}
-            </Layout>
-          </AdminAuthGuard>
-        </Providers>
-      </body>
-    </html>
+  return user.authorization.roles.some((roleName: string) =>
+    isAdminLevelRole(roleName)
   );
 }
 ```
 
-## Redux 상태 관리 패턴
+**관리자 역할 목록** (`@krgeobuk/core` 상수):
+- `super-admin` (최고 관리자)
+- `system-admin` (시스템 관리자)
+- `portal-admin` (포탈 관리자)
+- `admin` (일반 관리자)
 
-### 1. 슬라이스 구조 표준
+### 권한 검증 훅
+
 ```typescript
-// src/store/slices/userSlice.ts
-interface UserState {
-  users: User[];
-  selectedUser: User | null;
-  loading: boolean;
-  error: string | null;
-  pagination: PaginationState;
-  filters: UserFilters;
-}
-
-const initialState: UserState = {
-  users: [],
-  selectedUser: null,
-  loading: false,
-  error: null,
-  pagination: {
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: 10
-  },
-  filters: {}
+// src/hooks/useUserProfile.ts
+export const usePermission = (permission: string): boolean => {
+  const { permissions } = useUserProfile();
+  return permissions.includes(permission);
 };
 
-export const userSlice = createSlice({
-  name: 'user',
-  initialState,
-  reducers: {
-    // 동기 액션들
-    setSelectedUser: (state, action) => {
-      state.selectedUser = action.payload;
+export const useRole = (role: string): boolean => {
+  const { roles } = useUserProfile();
+  return roles.includes(role);
+};
+
+// 사용 예시
+const canEdit = usePermission('user.update');
+const isSuperAdmin = useRole('super-admin');
+```
+
+---
+
+## 인증 흐름
+
+```
+앱 시작 → Providers.tsx
+  └─ AuthProvider
+       └─ useAuthInitialize()        # POST /auth/initialize
+            ├─ 성공 → tokenManager.setAccessToken()
+            │         setAuthenticated(true), setInitialized(true)
+            │         useMyProfile() 활성화 (enabled: isAuthenticated)
+            └─ 실패 → setAuthenticated(false), setInitialized(true)
+
+                ↓
+        AdminAuthGuard
+            ├─ 미인증 → /auth/login?redirect_uri=...
+            ├─ 관리자 아님 → NEXT_PUBLIC_PORTAL_CLIENT_URL
+            └─ 관리자 확인 → 페이지 렌더링
+
+로그아웃 → useLogout()
+  └─ POST /auth/logout
+       → clearAuth() (Zustand)
+       → invalidate authInitialize
+       → remove myProfile 캐시
+```
+
+---
+
+## 대시보드 훅
+
+대시보드는 `useDashboard` 훅으로 여러 쿼리를 집계합니다.
+
+```typescript
+// src/hooks/useDashboard.ts
+export const useDashboard = () => {
+  const queryClient = useQueryClient();
+
+  // 3개 쿼리 병렬 실행
+  const { data: usersData }       = useUsers({ limit: 100 });
+  const { data: rolesData }       = useRoles({ limit: 100 });
+  const { data: permissionsData } = usePermissions({ limit: 100 });
+
+  // useMemo로 통계 계산 (성능 최적화)
+  const statistics = useMemo(() => ({
+    users:       { total, active, inactive, recentRegistrations },
+    roles:       { total, byService, avgPermissionsPerRole },
+    permissions: { total, byService },
+    analytics:   { dailyActiveUsers, loginTrends, topRoles, systemHealth },
+  }), [usersData, rolesData, permissionsData]);
+
+  // 5분마다 자동 새로고침
+  useEffect(() => {
+    const interval = setInterval(() => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.users.all() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.roles.all() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.permissions.all() });
+    }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [queryClient]);
+
+  return { statistics, loading, error, lastUpdated, fetchStatistics };
+};
+```
+
+---
+
+## Providers.tsx 구조
+
+```typescript
+// src/components/providers/Providers.tsx
+export function Providers({ children }: ProvidersProps) {
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: { retry: 1, staleTime: 5 * 60 * 1000, refetchOnWindowFocus: false },
+      mutations: { retry: 0 },
     },
-    setFilters: (state, action) => {
-      state.filters = { ...state.filters, ...action.payload };
-      state.pagination.currentPage = 1; // 필터 변경시 첫 페이지로
-    },
-    clearError: (state) => {
-      state.error = null;
-    }
-  },
-  extraReducers: (builder) => {
-    // 비동기 액션 처리
-    builder
-      .addCase(fetchUsers.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchUsers.fulfilled, (state, action) => {
-        state.loading = false;
-        state.users = action.payload.items;
-        state.pagination = action.payload.pageInfo;
-      })
-      .addCase(fetchUsers.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      });
-  }
-});
-```
+  }));
 
-### 2. 비동기 액션 패턴
-```typescript
-// createAsyncThunk 사용 표준
-export const fetchUsers = createAsyncThunk<
-  PaginatedResponse<User>,
-  SearchParams,
-  { rejectValue: string }
->(
-  'user/fetchUsers',
-  async (params, { rejectWithValue }) => {
-    try {
-      const response = await userService.getUsers(params);
-      return response;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '사용자 조회 실패';
-      return rejectWithValue(message);
-    }
-  }
-);
-
-export const createUser = createAsyncThunk<
-  void,
-  CreateUserDto,
-  { rejectValue: string }
->(
-  'user/createUser',
-  async (userData, { rejectWithValue, dispatch }) => {
-    try {
-      await userService.createUser(userData);
-      // 생성 후 목록 새로고침
-      dispatch(fetchUsers({}));
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '사용자 생성 실패';
-      return rejectWithValue(message);
-    }
-  }
-);
-```
-
-### 3. 셀렉터 활용 패턴
-```typescript
-// src/store/selectors/userSelectors.ts
-export const selectUsers = (state: RootState) => state.user.users;
-export const selectUserLoading = (state: RootState) => state.user.loading;
-export const selectSelectedUser = (state: RootState) => state.user.selectedUser;
-
-// 메모이제이션된 선택자
-export const selectFilteredUsers = createSelector(
-  [selectUsers, (state: RootState) => state.user.filters],
-  (users, filters) => {
-    return users.filter(user => {
-      if (filters.role && user.roles?.every(role => role.name !== filters.role)) {
-        return false;
-      }
-      if (filters.isActive !== undefined && user.isActive !== filters.isActive) {
-        return false;
-      }
-      return true;
-    });
-  }
-);
-```
-
-## 서비스 레이어 패턴
-
-### 1. HTTP 클라이언트 설정
-```typescript
-// src/lib/httpClient.ts
-import { HttpClient } from '@krgeobuk/http-client';
-
-const multiServerConfig = {
-  auth: {
-    baseURL: process.env.NEXT_PUBLIC_AUTH_SERVER_URL || 'http://localhost:8000',
-    timeout: 10000,
-    withCredentials: true,
-  },
-  authz: {
-    baseURL: process.env.NEXT_PUBLIC_AUTHZ_SERVER_URL || 'http://localhost:8100',
-    timeout: 10000,
-    withCredentials: true,
-  },
-  portal: {
-    baseURL: process.env.NEXT_PUBLIC_PORTAL_SERVER_URL || 'http://localhost:8200',
-    timeout: 10000,
-    withCredentials: true,
-  }
-};
-
-const tokenRefreshConfig = {
-  refreshUrl: '/api/auth/refresh',
-  refreshBeforeExpiry: 5 * 60 * 1000, // 5분 전
-};
-
-const securityPolicy = {
-  allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || ['localhost', '127.0.0.1'],
-  enableCSRF: true,
-  enableInputValidation: true,
-  enableSecurityLogging: true,
-  rateLimitConfig: {
-    maxAttempts: 100,
-    windowMs: 60 * 1000,
-  }
-};
-
-export const httpClient = new HttpClient(
-  multiServerConfig,
-  tokenRefreshConfig,
-  securityPolicy
-);
-```
-
-### 2. 서비스 클래스 패턴
-```typescript
-// src/services/userService.ts
-export class UserService {
-  async getUsers(params: SearchParams = {}): Promise<PaginatedResponse<User>> {
-    const response = await httpClient.get<PaginatedResponse<User>>('auth', '/api/users', {
-      params: this.formatSearchParams(params)
-    });
-    return response.data;
-  }
-
-  async getUserById(id: string): Promise<User> {
-    const response = await httpClient.get<User>('auth', `/api/users/${id}`);
-    return response.data;
-  }
-
-  async createUser(userData: CreateUserDto): Promise<void> {
-    await httpClient.post<void>('auth', '/api/users', this.formatUserData(userData));
-  }
-
-  async updateUser(id: string, userData: UpdateUserDto): Promise<void> {
-    await httpClient.patch<void>('auth', `/api/users/${id}`, this.formatUserData(userData));
-  }
-
-  async deleteUser(id: string): Promise<void> {
-    await httpClient.delete<void>('auth', `/api/users/${id}`);
-  }
-
-  // 사용자 역할 관리 (authz-server 연동)
-  async assignUserRole(userId: string, roleId: string): Promise<void> {
-    await httpClient.post<void>('authz', '/api/user-roles', { userId, roleId });
-  }
-
-  async removeUserRole(userId: string, roleId: string): Promise<void> {
-    await httpClient.delete<void>('authz', `/api/user-roles`, { 
-      data: { userId, roleId } 
-    });
-  }
-
-  private formatSearchParams(params: SearchParams): Record<string, string> {
-    // 검색 파라미터 포맷팅 로직
-    return Object.entries(params).reduce((acc, [key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        acc[key] = String(value);
-      }
-      return acc;
-    }, {} as Record<string, string>);
-  }
-
-  private formatUserData(userData: CreateUserDto | UpdateUserDto): any {
-    // API 형식에 맞게 데이터 변환
-    return caseConverter.camelToSnake(userData);
-  }
+  return (
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeInitializer />
+        <AuthProvider>
+          {children}
+          <ToastContainer position="top-right" maxToasts={5} />
+        </AuthProvider>
+        {process.env.NODE_ENV === 'development' && (
+          <ReactQueryDevtools initialIsOpen={false} />
+        )}
+      </QueryClientProvider>
+    </ErrorBoundary>
+  );
 }
-
-export const userService = new UserService();
 ```
 
-## 컴포넌트 개발 표준
+---
 
-### 1. 페이지 컴포넌트 구조
+## 페이지 구현 패턴
+
+페이지는 React Query 훅과 mutation을 직접 사용합니다.
+
 ```typescript
 // src/app/users/page.tsx
 'use client';
 
-import { useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchUsers } from '@/store/slices/userSlice';
-import { Layout } from '@/components/layout/Layout';
-import { UserTable } from '@/components/users/UserTable';
-import { UserFilters } from '@/components/users/UserFilters';
-import { CreateUserModal } from '@/components/users/CreateUserModal';
-
 export default function UsersPage(): JSX.Element {
-  const dispatch = useAppDispatch();
-  const { users, loading, error, pagination, filters } = useAppSelector((state) => state.user);
+  const [searchQuery, setSearchQuery] = useState<UserSearchQuery>({});
+  const [selectedUser, setSelectedUser] = useState<UserDetail | null>(null);
 
+  // 쿼리 훅
+  const { data: usersData, isPending: isLoading, error } = useUsers(searchQuery);
+  const { data: userRoles } = useUserRoles(selectedUser?.id ?? null);
+
+  // 뮤테이션 훅
+  const updateUserMutation = useUpdateUser();
+  const assignRoleMutation = useAssignRoleToUser();
+
+  // 디바운스 검색
+  const debouncedEmail = useDebounce(emailInput, 500);
   useEffect(() => {
-    dispatch(fetchUsers({ ...filters, page: pagination.currentPage }));
-  }, [dispatch, filters, pagination.currentPage]);
+    setSearchQuery(prev => ({ ...prev, email: debouncedEmail || undefined }));
+  }, [debouncedEmail]);
 
-  const handleFilterChange = (newFilters: UserFilters) => {
-    dispatch(setFilters(newFilters));
-  };
-
-  const handlePageChange = (page: number) => {
-    dispatch(setCurrentPage(page));
-  };
-
-  if (error) {
-    return <ErrorMessage message={error} onRetry={() => dispatch(fetchUsers(filters))} />;
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">사용자 관리</h1>
-        <CreateUserButton />
-      </div>
-      
-      <UserFilters filters={filters} onChange={handleFilterChange} />
-      
-      <UserTable
-        users={users}
-        loading={loading}
-        pagination={pagination}
-        onPageChange={handlePageChange}
-      />
-      
-      <CreateUserModal />
-    </div>
-  );
-}
-```
-
-### 2. 재사용 가능한 컴포넌트 패턴
-```typescript
-// src/components/common/Table.tsx
-interface TableProps<T> {
-  data: T[];
-  columns: TableColumn<T>[];
-  loading?: boolean;
-  emptyMessage?: string;
-  onRowClick?: (item: T) => void;
-  pagination?: PaginationProps;
-}
-
-export function Table<T extends { id: string }>({
-  data,
-  columns,
-  loading = false,
-  emptyMessage = '데이터가 없습니다',
-  onRowClick,
-  pagination
-}: TableProps<T>): JSX.Element {
-  if (loading) {
-    return <SkeletonLoader rows={5} columns={columns.length} />;
-  }
-
-  if (data.length === 0) {
-    return (
-      <div className="text-center py-12 text-gray-500">
-        {emptyMessage}
-      </div>
-    );
-  }
-
-  return (
-    <div className="overflow-hidden bg-white shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-      <table className="min-w-full divide-y divide-gray-300">
-        <thead className="bg-gray-50">
-          <tr>
-            {columns.map((column) => (
-              <th
-                key={column.key}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                {column.title}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200 bg-white">
-          {data.map((item) => (
-            <tr
-              key={item.id}
-              onClick={() => onRowClick?.(item)}
-              className={onRowClick ? 'cursor-pointer hover:bg-gray-50' : ''}
-            >
-              {columns.map((column) => (
-                <td key={column.key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {column.render ? column.render(item) : String(item[column.key as keyof T])}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      
-      {pagination && <Pagination {...pagination} />}
-    </div>
-  );
-}
-```
-
-### 3. 폼 컴포넌트 패턴
-```typescript
-// src/components/forms/UserForm.tsx
-interface UserFormProps {
-  user?: User;
-  onSubmit: (data: CreateUserDto | UpdateUserDto) => Promise<void>;
-  onCancel: () => void;
-}
-
-export const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, onCancel }) => {
-  const { 
-    register, 
-    handleSubmit, 
-    formState: { errors, isSubmitting },
-    reset,
-    watch 
-  } = useForm<UserFormData>({
-    defaultValues: user ? formatUserForForm(user) : {},
-    mode: 'onChange'
-  });
-
-  const onFormSubmit = async (data: UserFormData) => {
+  const handleSubmit = async (data: UserFormData) => {
     try {
-      await onSubmit(formatFormData(data));
-      reset();
-    } catch (error) {
-      console.error('폼 제출 실패:', error);
+      await updateUserMutation.mutateAsync({ id: selectedUser!.id, data });
+      toast.success('수정 완료');
+      closeModal();
+    } catch (err) {
+      handleApiError(err);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormField
-          label="이메일"
-          required
-          error={errors.email?.message}
-        >
-          <input
-            {...register('email', {
-              required: '이메일을 입력해주세요',
-              pattern: {
-                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                message: '올바른 이메일 형식을 입력해주세요'
-              }
-            })}
-            type="email"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </FormField>
-
-        <FormField
-          label="이름"
-          required
-          error={errors.name?.message}
-        >
-          <input
-            {...register('name', { required: '이름을 입력해주세요' })}
-            type="text"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </FormField>
-      </div>
-
-      <div className="flex justify-end space-x-3">
-        <Button type="button" variant="secondary" onClick={onCancel}>
-          취소
-        </Button>
-        <LoadingButton
-          type="submit"
-          loading={isSubmitting}
-          variant="primary"
-        >
-          {user ? '수정' : '생성'}
-        </LoadingButton>
-      </div>
-    </form>
+    <Layout>
+      {error && <ErrorMessage message={String(error)} />}
+      <SearchSection onSearch={setEmailInput} />
+      <Table data={usersData?.items ?? []} loading={isLoading} onRowClick={openModal} />
+      <Pagination pageInfo={usersData?.pageInfo} onChange={handlePageChange} />
+      <UserFormModal onSubmit={handleSubmit} />
+    </Layout>
   );
-};
-```
-
-## 커스텀 훅 표준
-
-### 1. 데이터 페칭 훅 패턴
-```typescript
-// src/hooks/useUsers.ts
-export const useUsers = () => {
-  const dispatch = useAppDispatch();
-  const { users, loading, error, pagination, filters } = useAppSelector((state) => state.user);
-
-  const fetchUsers = useCallback((params: SearchParams = {}) => {
-    dispatch(fetchUsersAction({ ...filters, ...params }));
-  }, [dispatch, filters]);
-
-  const createUser = useCallback(async (userData: CreateUserDto) => {
-    const result = await dispatch(createUserAction(userData));
-    return result.type.endsWith('/fulfilled');
-  }, [dispatch]);
-
-  const updateUser = useCallback(async (id: string, userData: UpdateUserDto) => {
-    const result = await dispatch(updateUserAction({ id, userData }));
-    return result.type.endsWith('/fulfilled');
-  }, [dispatch]);
-
-  const deleteUser = useCallback(async (id: string) => {
-    const result = await dispatch(deleteUserAction(id));
-    return result.type.endsWith('/fulfilled');
-  }, [dispatch]);
-
-  return {
-    // 데이터
-    users,
-    loading,
-    error,
-    pagination,
-    filters,
-    
-    // 액션
-    fetchUsers,
-    createUser,
-    updateUser,
-    deleteUser,
-    
-    // 유틸리티
-    refetch: () => fetchUsers(),
-    clearError: () => dispatch(clearUserError())
-  };
-};
-```
-
-### 2. 모달 관리 훅 패턴
-```typescript
-// src/hooks/useModal.ts
-interface ModalState<T = any> {
-  isOpen: boolean;
-  mode: 'create' | 'edit' | 'delete' | null;
-  data: T | null;
 }
-
-export const useModal = <T = any>() => {
-  const [modalState, setModalState] = useState<ModalState<T>>({
-    isOpen: false,
-    mode: null,
-    data: null
-  });
-
-  const openCreateModal = useCallback(() => {
-    setModalState({ isOpen: true, mode: 'create', data: null });
-  }, []);
-
-  const openEditModal = useCallback((data: T) => {
-    setModalState({ isOpen: true, mode: 'edit', data });
-  }, []);
-
-  const openDeleteModal = useCallback((data: T) => {
-    setModalState({ isOpen: true, mode: 'delete', data });
-  }, []);
-
-  const closeModal = useCallback(() => {
-    setModalState({ isOpen: false, mode: null, data: null });
-  }, []);
-
-  return {
-    isOpen: modalState.isOpen,
-    mode: modalState.mode,
-    data: modalState.data,
-    openCreateModal,
-    openEditModal,
-    openDeleteModal,
-    closeModal
-  };
-};
 ```
 
-## 환경 설정
+---
 
-### 필수 환경 변수
+## 경로 별칭
+
+```typescript
+// tsconfig.json: "@/*" → "./src/*"
+import { queryKeys }    from '@/hooks/queries/keys';
+import { authService }  from '@/services/authService';
+import { useAuthStore } from '@/store/authStore';
+import { authApi }      from '@/lib/httpClient';
+import { hasAdminRole } from '@/utils/roleUtils';
+```
+
+---
+
+## 환경 변수
+
 ```bash
-# 백엔드 서비스 URL (필수)
-NEXT_PUBLIC_AUTH_SERVER_URL=http://localhost:8000
-NEXT_PUBLIC_AUTHZ_SERVER_URL=http://localhost:8100
-NEXT_PUBLIC_PORTAL_SERVER_URL=http://localhost:8200
+# API 서버
+NEXT_PUBLIC_AUTH_SERVER_URL=http://localhost:8000/auth
+NEXT_PUBLIC_AUTHZ_SERVER_URL=http://localhost:8100/authz
+NEXT_PUBLIC_PORTAL_SERVER_URL=http://localhost:8200/portal
+NEXT_PUBLIC_TOKEN_REFRESH_URL=http://localhost:8000/auth/auth/refresh
 
 # 클라이언트 URL
 NEXT_PUBLIC_ADMIN_CLIENT_URL=http://localhost:3210
 NEXT_PUBLIC_PORTAL_CLIENT_URL=http://localhost:3200
 
-# 환경 설정
+# 환경
 NEXT_PUBLIC_ENVIRONMENT=local
 NODE_ENV=local
 NEXT_TELEMETRY_DISABLED=1
-```
 
-### HTTP 클라이언트 환경 변수 (프로덕션)
-```bash
-# 보안 정책 (운영 환경에서 필수)
-ALLOWED_ORIGINS=yourdomain.com,admin.yourdomain.com,auth.yourdomain.com,authz.yourdomain.com
-
-# 성능 튜닝
+# 보안
+ALLOWED_ORIGINS=localhost,127.0.0.1
 NEXT_PUBLIC_API_TIMEOUT=15000
-NEXT_PUBLIC_RATE_LIMIT_MAX_ATTEMPTS=50
-NEXT_PUBLIC_RATE_LIMIT_WINDOW_MS=60000
-
-# 보안 설정
 NEXT_PUBLIC_ENABLE_CSRF=true
 NEXT_PUBLIC_ENABLE_INPUT_VALIDATION=true
 NEXT_PUBLIC_ENABLE_SECURITY_LOGGING=true
 ```
 
-## 성능 최적화
-
-### 1. 컴포넌트 최적화
-```typescript
-// React.memo와 useMemo 활용
-export const UserCard = React.memo<UserCardProps>(({ user, onEdit, onDelete }) => {
-  const displayName = useMemo(() => {
-    return user.name || user.email;
-  }, [user.name, user.email]);
-
-  const handleEdit = useCallback(() => {
-    onEdit(user);
-  }, [onEdit, user]);
-
-  return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-      <h3 className="font-medium text-gray-900">{displayName}</h3>
-      <p className="text-sm text-gray-500">{user.email}</p>
-      <div className="mt-4 flex space-x-2">
-        <Button size="sm" onClick={handleEdit}>수정</Button>
-        <Button size="sm" variant="danger" onClick={() => onDelete(user)}>삭제</Button>
-      </div>
-    </div>
-  );
-});
-
-UserCard.displayName = 'UserCard';
-```
-
-### 2. 데이터 페칭 최적화
-```typescript
-// 페이지네이션과 캐싱 최적화
-const useOptimizedUsers = () => {
-  const [cache, setCache] = useState<Map<string, PaginatedResponse<User>>>(new Map());
-  
-  const fetchUsersWithCache = useCallback(async (params: SearchParams) => {
-    const cacheKey = JSON.stringify(params);
-    
-    if (cache.has(cacheKey)) {
-      return cache.get(cacheKey)!;
-    }
-    
-    const result = await userService.getUsers(params);
-    setCache(prev => new Map(prev).set(cacheKey, result));
-    
-    return result;
-  }, [cache]);
-  
-  return { fetchUsersWithCache };
-};
-```
-
-### 3. 번들 최적화
-```typescript
-// 동적 import로 코드 스플리팅
-const UserDetailModal = lazy(() => import('@/components/modals/UserDetailModal'));
-const RoleAssignModal = lazy(() => import('@/components/modals/RoleAssignModal'));
-
-// 조건부 렌더링으로 번들 크기 최적화
-{showUserModal && (
-  <Suspense fallback={<LoadingSpinner />}>
-    <UserDetailModal user={selectedUser} onClose={() => setShowUserModal(false)} />
-  </Suspense>
-)}
-```
-
-## 보안 가이드
-
-### 1. 입력 검증
-```typescript
-// 클라이언트 사이드 검증
-const validateUserInput = (data: any): ValidationResult => {
-  const errors: string[] = [];
-  
-  // XSS 방지
-  if (typeof data.name === 'string' && /<script|javascript:/i.test(data.name)) {
-    errors.push('이름에 스크립트가 포함될 수 없습니다.');
-  }
-  
-  // SQL Injection 방지 기본 패턴
-  const suspiciousPatterns = [/union\s+select/i, /drop\s+table/i, /;--/];
-  if (suspiciousPatterns.some(pattern => pattern.test(data.email || ''))) {
-    errors.push('잘못된 이메일 형식입니다.');
-  }
-  
-  return { isValid: errors.length === 0, errors };
-};
-```
-
-### 2. 역할 기반 접근 제어
-```typescript
-// 페이지 레벨 권한 검사
-const withAdminAuth = <P extends object>(WrappedComponent: React.ComponentType<P>) => {
-  return function AdminProtectedComponent(props: P) {
-    const { user } = useAuth();
-    
-    if (!hasAdminRole(user)) {
-      return <UnauthorizedPage />;
-    }
-    
-    return <WrappedComponent {...props} />;
-  };
-};
-
-// 사용 예시
-export default withAdminAuth(function SuperAdminPage() {
-  // 최고 관리자만 접근 가능한 페이지
-  return <div>Super Admin Content</div>;
-});
-```
-
-## 테스트 가이드
-
-### 1. 컴포넌트 테스트
-```typescript
-// src/components/__tests__/UserCard.test.tsx
-import { render, screen, fireEvent } from '@testing-library/react';
-import { UserCard } from '../UserCard';
-
-const mockUser = {
-  id: '1',
-  name: 'Test User',
-  email: 'test@example.com',
-  isActive: true
-};
-
-describe('UserCard', () => {
-  it('사용자 정보를 올바르게 표시한다', () => {
-    render(<UserCard user={mockUser} onEdit={jest.fn()} onDelete={jest.fn()} />);
-    
-    expect(screen.getByText('Test User')).toBeInTheDocument();
-    expect(screen.getByText('test@example.com')).toBeInTheDocument();
-  });
-  
-  it('수정 버튼 클릭시 onEdit 콜백이 호출된다', () => {
-    const onEdit = jest.fn();
-    render(<UserCard user={mockUser} onEdit={onEdit} onDelete={jest.fn()} />);
-    
-    fireEvent.click(screen.getByText('수정'));
-    expect(onEdit).toHaveBeenCalledWith(mockUser);
-  });
-});
-```
-
-### 2. Redux 슬라이스 테스트
-```typescript
-// src/store/slices/__tests__/userSlice.test.ts
-import { configureStore } from '@reduxjs/toolkit';
-import userSlice, { setSelectedUser, setFilters } from '../userSlice';
-
-describe('userSlice', () => {
-  let store: ReturnType<typeof configureStore>;
-  
-  beforeEach(() => {
-    store = configureStore({
-      reducer: {
-        user: userSlice.reducer
-      }
-    });
-  });
-  
-  it('선택된 사용자를 설정한다', () => {
-    const user = { id: '1', name: 'Test User', email: 'test@example.com' };
-    
-    store.dispatch(setSelectedUser(user));
-    
-    expect(store.getState().user.selectedUser).toEqual(user);
-  });
-  
-  it('필터 변경시 페이지를 1로 리셋한다', () => {
-    const filters = { role: 'admin' };
-    
-    store.dispatch(setFilters(filters));
-    
-    const state = store.getState().user;
-    expect(state.filters).toEqual(filters);
-    expect(state.pagination.currentPage).toBe(1);
-  });
-});
-```
-
-## 배포 가이드
-
-### 1. 프로덕션 빌드
-```bash
-# TypeScript 검증
-npm run type-check
-
-# 린팅 검증
-npm run lint
-
-# 프로덕션 빌드
-npm run build
-
-# 빌드 결과 테스트
-npm run start
-```
-
-### 2. Docker 설정 (필요시)
-```dockerfile
-# Dockerfile
-FROM node:18-alpine AS builder
-
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-
-COPY . .
-RUN npm run build
-
-FROM node:18-alpine AS runner
-WORKDIR /app
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
-
-EXPOSE 3210
-ENV PORT 3210
-
-CMD ["node", "server.js"]
-```
-
-## 문제 해결
-
-### 일반적인 이슈
-
-#### 1. 인증 관련 문제
-- **증상**: 로그인 후에도 계속 로그인 페이지로 리다이렉트
-- **해결**: auth-server CORS 설정 확인, 쿠키 도메인 설정 검증
-
-#### 2. 권한 관련 문제
-- **증상**: 관리자임에도 일반 포탈로 리다이렉트
-- **해결**: hasAdminRole 함수의 역할 검증 로직 확인, 사용자 역할 데이터 검증
-
-#### 3. API 호출 실패
-- **증상**: 백엔드 API 호출 실패
-- **해결**: 환경 변수 확인, 네트워크 연결 확인, CORS 설정 검증
-
-### 디버깅 도구
-- **React DevTools**: 컴포넌트 상태 확인
-- **Redux DevTools**: 상태 변화 추적  
-- **Network Tab**: API 호출 모니터링
-- **Console**: 에러 로그 확인
-
-## @krgeobuk 패키지 활용
-
-### 주요 패키지 사용법
-
-#### 1. @krgeobuk/http-client
-```typescript
-// 다중 서버 HTTP 클라이언트
-import { HttpClient } from '@krgeobuk/http-client';
-
-// 설정 및 사용은 위의 서비스 레이어 패턴 참조
-```
-
-#### 2. @krgeobuk/core
-```typescript
-// 공통 인터페이스와 유틸리티
-import type { PaginatedResponse, ResponseFormat } from '@krgeobuk/core/interfaces';
-import { caseConverter } from '@krgeobuk/core/utils';
-```
-
-#### 3. 도메인별 패키지
-```typescript
-// 각 도메인의 DTO와 인터페이스 활용
-import type { CreateUserDto, UpdateUserDto } from '@krgeobuk/user/dtos';
-import type { CreateRoleDto, UpdateRoleDto } from '@krgeobuk/role/dtos';
-import type { CreatePermissionDto } from '@krgeobuk/permission/dtos';
-```
+전체 목록: `.env.example`
 
 ---
 
-## Hooks 사용 패턴 (Portal-Client 패턴)
+## 개발 체크리스트
 
-> **중요**: portal-admin-client는 portal-client와 동일한 Hooks 패턴을 따릅니다.
+### 데이터 패칭
+- [ ] 서버 상태는 React Query 사용 (`useQuery`, `useMutation`)
+- [ ] query key는 반드시 `queryKeys.*` 사용 (인라인 문자열 금지)
+- [ ] mutation 성공 후 관련 query `invalidateQueries` 또는 `removeQueries`
+- [ ] `staleTime` 설정으로 불필요한 리패치 방지
 
-### 핵심 원칙: Hooks → Slice → Service
+### 상태 관리
+- [ ] 전역 UI 상태 → Zustand
+- [ ] 인증 상태 → `useAuthStore()` (isAuthenticated, isInitialized)
+- [ ] 인증 정보 (user, logout) → `useAuth()` (AuthContext)
 
-portal-admin-client의 모든 데이터 흐름은 다음 패턴을 따릅니다:
+### HTTP 통신
+- [ ] 서버별 API 인스턴스 구분: `authApi`, `authzApi`, `portalApi`
+- [ ] 직접 axios 사용 금지 → `@krgeobuk/http-client` 사용
+- [ ] 서비스 클래스는 `BaseService` 상속, 싱글톤으로 내보내기
 
-```
-Component → Custom Hook → Redux Slice → Service → HTTP Client → API
-```
+### 권한 관리
+- [ ] `hasAdminRole()` 유틸리티로 관리자 역할 검증
+- [ ] `usePermission(action)` / `useRole(role)` 훅으로 세부 권한 검증
+- [ ] `AdminAuthGuard`가 루트 레이아웃에 적용되어 있는지 확인
 
-### 1. 인증 Hook 패턴
-
-**파일**: `src/hooks/useAuth.ts`
-
-```typescript
-/**
- * useAuth - Redux 기반 인증 상태 관리
- *
- * 특징:
- * - Redux authSlice를 래핑
- * - initializeAuth() 자동 실행
- * - 서비스 직접 호출 없음
- */
-const { user, isAuthenticated, isLoading } = useAuth();
-
-// Hook 내부에서 자동으로 initializeAuth() dispatch
-useEffect(() => {
-  if (!isInitialized) {
-    dispatch(initializeAuth());
-  }
-}, [isInitialized]);
-```
-
-### 2. 사용자 프로필 Hook 패턴
-
-**파일**: `src/hooks/useUserProfile.ts`
-
-```typescript
-/**
- * useUserProfile - Redux 기반 사용자 프로필 관리
- *
- * 특징:
- * - Redux authSlice의 user 상태 조회
- * - refetch는 Redux dispatch로 구현
- * - 권한 검증 유틸리티 제공
- */
-const { userProfile, loading, availableServices, roles, permissions, refetch } = useUserProfile();
-
-// 권한 검증 Hooks
-const hasPermission = usePermission('admin.view');
-const hasRole = useRole('admin');
-const hasAllPermissions = usePermissions(['admin.view', 'admin.edit']);
-const hasAnyRole = useAnyRole(['admin', 'manager']);
-```
-
-### 3. CRUD 페이지 패턴 (Redux Direct)
-
-**사용자 관리 페이지 예시:**
-
-```typescript
-// src/app/users/page.tsx
-export default function UsersPage() {
-  const dispatch = useAppDispatch();
-  const { users, isLoading, error, pagination } = useAppSelector(state => state.user);
-
-  // 초기 데이터 로드
-  useEffect(() => {
-    dispatch(fetchUsers({}));
-  }, [dispatch]);
-
-  // 검색 처리
-  const handleSearch = (query: UserSearchQuery) => {
-    dispatch(fetchUsers(query));
-  };
-
-  // 생성 처리
-  const handleCreate = async (userData: CreateUserDto) => {
-    try {
-      await dispatch(createUser(userData)).unwrap();
-      dispatch(fetchUsers({})); // 목록 새로고침
-    } catch (error) {
-      // 에러 처리
-    }
-  };
-
-  return (
-    <div>
-      <SearchBar onSearch={handleSearch} />
-      <UserTable users={users} loading={isLoading} />
-      <CreateUserModal onSubmit={handleCreate} />
-    </div>
-  );
-}
-```
-
-### 4. 미사용 Hooks (@deprecated)
-
-다음 Hooks는 Redux Slice로 대체되어 **사용하지 않습니다**:
-
-- `useUsers.ts` → `userSlice` 사용
-- `useRoles.ts` → `roleSlice` 사용
-- `usePermissions.ts` → `permissionSlice` 사용
-- `usePagination.ts` → Redux pagination state 사용
-
-향후 제거 예정이며, 파일 상단에 `@deprecated` 태그가 표시되어 있습니다.
-
-### 5. 공통 컴포넌트 활용
-
-useLoadingState와 useErrorHandler Hook 대신 공통 컴포넌트를 사용합니다:
-
-```typescript
-// ❌ 이전 방식 (useLoadingState Hook)
-const { isLoading, withLoading } = useLoadingState();
-const handleSubmit = withLoading('save', async () => {
-  await api.save();
-});
-
-// ✅ 새로운 방식 (LoadingButton Component)
-import { LoadingButton } from '@/components/common/LoadingButton';
-
-const [isLoading, setIsLoading] = useState(false);
-
-<LoadingButton isLoading={isLoading} onClick={handleSubmit}>
-  저장
-</LoadingButton>
-```
-
-```typescript
-// ❌ 이전 방식 (useErrorHandler Hook)
-const { handleApiError } = useErrorHandler();
-
-// ✅ 새로운 방식 (ErrorMessage Component)
-import { ApiErrorMessage } from '@/components/common/ErrorMessage';
-
-{error && (
-  <ApiErrorMessage
-    error={error}
-    onRetry={handleRetry}
-    onDismiss={() => setError(null)}
-  />
-)}
-```
-
-### 6. AuthContext 통합
-
-**파일**: `src/context/AuthContext.tsx`
-
-AuthContext는 Redux와 통합되어 있습니다:
-
-```typescript
-export function AuthProvider({ children }) {
-  const dispatch = useAppDispatch();
-  const { user, isAuthenticated, isLoading, error, isInitialized } =
-    useAppSelector(state => state.auth);
-
-  // 초기화 (RefreshToken 기반)
-  useEffect(() => {
-    if (!isInitialized) {
-      dispatch(initializeAuth());
-    }
-  }, [isInitialized]);
-
-  // 로그아웃
-  const logout = async () => {
-    try {
-      await dispatch(logoutUser()).unwrap();
-    } catch {
-      dispatch(clearUser());
-      tokenManager.clearAccessToken();
-    }
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, isLoggedIn, logout, refreshUser }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-```
-
-### 7. 데이터 흐름 비교
-
-#### Portal-Admin-Client (현재)
-```
-Component
-  ↓
-useAppDispatch + useAppSelector (Redux)
-  ↓
-Redux Slice (createAsyncThunk)
-  ↓
-Service (싱글톤)
-  ↓
-HTTP Client (@krgeobuk/http-client)
-  ↓
-API Server
-```
-
-#### Portal-Client (동일 패턴)
-```
-Component
-  ↓
-useAuth / useUserProfile Hook (Redux Wrapper)
-  ↓
-Redux Slice
-  ↓
-Service
-  ↓
-HTTP Client
-  ↓
-API Server
-```
-
-### 8. 페이지별 패턴 가이드
-
-| 페이지 유형 | 추천 패턴 | 예시 |
-|----------|---------|------|
-| **인증 상태 확인** | useAuth Hook | `const { isAuthenticated } = useAuth();` |
-| **사용자 프로필** | useUserProfile Hook | `const { userProfile, roles } = useUserProfile();` |
-| **권한 검증** | usePermission Hook | `if (usePermission('admin.view')) { ... }` |
-| **CRUD 관리** | Redux Direct | `dispatch(fetchUsers({}))` |
-| **대시보드** | 특화 Hook | `const { statistics } = useDashboard();` |
-
-### 9. 마이그레이션 체크리스트
-
-기존 코드를 새 패턴으로 마이그레이션할 때:
-
-- [ ] useAuth는 Redux authSlice 래핑 확인
-- [ ] useUserProfile은 Redux authSlice 래핑 확인
-- [ ] useUsers/useRoles/usePermissions Hook 사용 제거
-- [ ] Redux dispatch를 직접 사용
-- [ ] useLoadingState → LoadingButton 컴포넌트로 교체
-- [ ] useErrorHandler → ErrorMessage 컴포넌트로 교체
-- [ ] AuthContext가 Redux 기반인지 확인
-
----
-
-Portal Admin Client는 krgeobuk 생태계의 중앙 관리 허브로서, 높은 보안성과 사용성을 모두 만족하는 관리자 포탈을 지향합니다.
+### 코드 품질
+- [ ] `npm run type-check` 통과
+- [ ] `npm run lint` 통과
+- [ ] `'use client'` 지시어 필요한 컴포넌트에만 사용
+- [ ] 이미지는 `next/image` 사용
