@@ -227,10 +227,10 @@ export const queryKeys = {
 
 ```bash
 # ===== API 서버 =====
-NEXT_PUBLIC_AUTH_SERVER_URL=http://localhost:8000/api
-NEXT_PUBLIC_AUTHZ_SERVER_URL=http://localhost:8100/api
-NEXT_PUBLIC_PORTAL_SERVER_URL=http://localhost:8200/api
-NEXT_PUBLIC_TOKEN_REFRESH_URL=http://localhost:8000/api/auth/refresh
+NEXT_PUBLIC_AUTH_SERVER_URL=http://localhost:8000/auth
+NEXT_PUBLIC_AUTHZ_SERVER_URL=http://localhost:8100/authz
+NEXT_PUBLIC_PORTAL_SERVER_URL=http://localhost:8200/portal
+NEXT_PUBLIC_TOKEN_REFRESH_URL=http://localhost:8000/auth/auth/refresh
 
 # ===== 클라이언트 URL =====
 NEXT_PUBLIC_ADMIN_CLIENT_URL=http://localhost:3210
