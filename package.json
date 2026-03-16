@@ -37,7 +37,7 @@
   "devDependencies": {
     "@eslint/compat": "^1.2.3",
     "@eslint/eslintrc": "^3.1.0",
-    "@eslint/js": "^9.27.0 || ^10.0.0",
+    "@eslint/js": "^9.27.0",
     "@krgeobuk/eslint-config": "^1.0.0",
     "@krgeobuk/tsconfig": "^1.0.0",
     "@types/node": "^20.0.0",
